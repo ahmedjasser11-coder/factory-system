@@ -8,6 +8,9 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <!-- Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -996,6 +999,12 @@
     let currentWorkerForEditRequest = null;
 
     const WEEKLY_WORK_DAYS = 6;
+	// ==================== إعداد Firebase ====================
+const firebaseConfig = {
+    databaseURL: "https://system-admin-21a48-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+firebase.initializeApp(firebaseConfig);
+const cloudDB = firebase.database();
 
     
     // دوال مساعدة
@@ -1114,87 +1123,57 @@
     }
 
     // ==================== قاعدة البيانات ====================
-   // ==================== إعدادات السحابة ====================
-const API_URL = 'https://corsproxy.io/https://script.google.com/macros/s/AKfycbyeBKi7wbrWSkNVrvlPk1jzP5FCZq0eEH5_uC8HayVWTETmAdJdTHhWQxlrkS1nFnY/exec';
-let useCloud = true;
-
-// ==================== نظام التخزين الهجين ====================
-function saveLocalData() {
-    localStorage.setItem('production_workers', JSON.stringify(productionWorkers));
-    localStorage.setItem('production_phases', JSON.stringify(productionPhases));
-    localStorage.setItem('production_models', JSON.stringify(productionModelsProgress));
-    localStorage.setItem('production_completion_groups', JSON.stringify(productionCompletionGroups));
-    localStorage.setItem('production_last_models', JSON.stringify(productionLastUsedModels));
-    localStorage.setItem('fixed_workers', JSON.stringify(fixedWorkers));
-    localStorage.setItem('edit_requests', JSON.stringify(pendingEditRequests));
-}
-
-function loadLocalData() {
-    if(localStorage.getItem('production_workers')) productionWorkers = JSON.parse(localStorage.getItem('production_workers'));
-    if(localStorage.getItem('production_phases')) productionPhases = JSON.parse(localStorage.getItem('production_phases'));
-    if(localStorage.getItem('production_models')) productionModelsProgress = JSON.parse(localStorage.getItem('production_models'));
-    if(localStorage.getItem('production_completion_groups')) productionCompletionGroups = JSON.parse(localStorage.getItem('production_completion_groups'));
-    if(localStorage.getItem('production_last_models')) productionLastUsedModels = JSON.parse(localStorage.getItem('production_last_models'));
-    if(localStorage.getItem('fixed_workers')) fixedWorkers = JSON.parse(localStorage.getItem('fixed_workers'));
-    if(localStorage.getItem('edit_requests')) pendingEditRequests = JSON.parse(localStorage.getItem('edit_requests'));
-}
-
-async function syncToCloud() {
-    if (!useCloud) return;
-    const modelsArray = Object.entries(productionModelsProgress).map(([model, data]) => ({ model, ...data }));
-    const payloads = {
-        production_workers: productionWorkers,
-        production_phases: productionPhases,
-        production_models: modelsArray,
-        production_completion_groups: productionCompletionGroups,
-        production_last_models: productionLastUsedModels.map(m => ({ model: m })),
-        fixed_workers: fixedWorkers,
-        edit_requests: pendingEditRequests
-    };
-    for (let sheet in payloads) {
-        const url = API_URL + '?action=write&sheet=' + sheet + '&data=' + encodeURIComponent(JSON.stringify(payloads[sheet]));
-        try { await fetch(url); } catch(e) {}
+   // ==================== نظام التخزين (Firebase) ====================
+async function saveData() {
+    try {
+        const modelsArray = Object.entries(productionModelsProgress).map(([model, data]) => ({ model, ...data }));
+        await Promise.all([
+            cloudDB.ref('production_workers').set(productionWorkers),
+            cloudDB.ref('production_phases').set(productionPhases),
+            cloudDB.ref('production_models').set(modelsArray),
+            cloudDB.ref('production_completion_groups').set(productionCompletionGroups),
+            cloudDB.ref('production_last_models').set(productionLastUsedModels.map(m => ({ model: m }))),
+            cloudDB.ref('fixed_workers').set(fixedWorkers),
+            cloudDB.ref('edit_requests').set(pendingEditRequests)
+        ]);
+        console.log('✅ Synced to Firebase');
+    } catch(e) {
+        console.warn('Sync failed:', e);
     }
 }
 
-async function saveData() {
-    saveLocalData();
-    syncToCloud();
-}
-
-async function loadFromCloud() {
-    if (!useCloud) return;
-    try {
-        const sheets = ['production_workers','production_phases','production_models','production_completion_groups','production_last_models','fixed_workers','edit_requests'];
-        for (let sheet of sheets) {
-            const resp = await fetch(API_URL + '?action=read&sheet=' + sheet);
-            const data = await resp.json();
-            if (Array.isArray(data)) {
-                if (sheet === 'production_models') {
-                    productionModelsProgress = {};
-                    data.forEach(item => { const model = item.model; delete item.model; productionModelsProgress[model] = item; });
-                } else if (sheet === 'production_last_models') {
-                    productionLastUsedModels = data.map(i => i.model).filter(Boolean);
-                } else {
-                    window[sheet] = data;
-                }
-            }
-        }
-    } catch(e) {}
-}
-
 async function loadData() {
-    loadLocalData();
-    await loadFromCloud();
-    if (!productionWorkers.length) productionWorkers = [{ id:1, name:"خالد العمري", email:"", role:"worker", attendanceLogs:[], tasks:[], payments:[], adjustments:[], latenessRecords:[], absenceRecords:[], shiftStart:"09:00", shiftEnd:"19:00", zkUID:null }];
-    if (!productionPhases.length) productionPhases = [{ id:1, name:"تركيب قبة", price:5000 }, { id:2, name:"تسكير قبة", price:5000 }];
-    if (!productionCompletionGroups.length) productionCompletionGroups = [{ name: "رش عادي", phases: ["تسكير قبة"] }];
-    
-    productionWorkers.forEach(w => { w.email = w.email||''; w.attendanceLogs = w.attendanceLogs||[]; w.tasks = w.tasks||[]; w.payments = w.payments||[]; w.adjustments = w.adjustments||[]; w.latenessRecords = w.latenessRecords||[]; w.absenceRecords = w.absenceRecords||[]; w.shiftStart = w.shiftStart||"09:00"; w.shiftEnd = w.shiftEnd||"19:00"; w.zkUID = w.zkUID||null; w.overtimeRecords = w.overtimeRecords||[]; });
-    fixedWorkers.forEach(w => { w.email = w.email||''; w.attendanceLogs = w.attendanceLogs||[]; w.latenessRecords = w.latenessRecords||[]; w.overtimeRecords = w.overtimeRecords||[]; w.absenceRecords = w.absenceRecords||[]; w.payments = w.payments||[]; w.shiftStart = w.shiftStart||"09:00"; w.shiftEnd = w.shiftEnd||"18:00"; w.weeklyWage = w.weeklyWage||500000; w.overtimeRate = w.overtimeRate||1.5; w.lateDeductionRate = w.lateDeductionRate||1.0; w.zkUID = w.zkUID||null; });
-    Object.keys(productionModelsProgress).forEach(m => updateProductionModelStatus(m));
-    refreshAllUI();
-} 
+    try {
+        const snap = await cloudDB.ref('/').once('value');
+        if (snap.exists()) {
+            const data = snap.val();
+            if (data.production_workers) productionWorkers = data.production_workers;
+            if (data.production_phases) productionPhases = data.production_phases;
+            if (data.production_models) {
+                productionModelsProgress = {};
+                data.production_models.forEach(item => {
+                    const model = item.model;
+                    delete item.model;
+                    productionModelsProgress[model] = item;
+                });
+            }
+            if (data.production_completion_groups) productionCompletionGroups = data.production_completion_groups;
+            if (data.production_last_models) productionLastUsedModels = data.production_last_models.map(i => i.model).filter(Boolean);
+            if (data.fixed_workers) fixedWorkers = data.fixed_workers;
+            if (data.edit_requests) pendingEditRequests = data.edit_requests;
+        }
+        if (!productionWorkers.length) productionWorkers = [{ id:1, name:"خالد العمري", email:"", role:"worker", attendanceLogs:[], tasks:[], payments:[], adjustments:[], latenessRecords:[], absenceRecords:[], shiftStart:"09:00", shiftEnd:"19:00", zkUID:null }];
+        if (!productionPhases.length) productionPhases = [{ id:1, name:"تركيب قبة", price:5000 }, { id:2, name:"تسكير قبة", price:5000 }];
+        if (!productionCompletionGroups.length) productionCompletionGroups = [{ name: "رش عادي", phases: ["تسكير قبة"] }];
+        
+        productionWorkers.forEach(w => { w.email = w.email||''; w.attendanceLogs = w.attendanceLogs||[]; w.tasks = w.tasks||[]; w.payments = w.payments||[]; w.adjustments = w.adjustments||[]; w.latenessRecords = w.latenessRecords||[]; w.absenceRecords = w.absenceRecords||[]; w.shiftStart = w.shiftStart||"09:00"; w.shiftEnd = w.shiftEnd||"19:00"; w.zkUID = w.zkUID||null; w.overtimeRecords = w.overtimeRecords||[]; });
+        fixedWorkers.forEach(w => { w.email = w.email||''; w.attendanceLogs = w.attendanceLogs||[]; w.latenessRecords = w.latenessRecords||[]; w.overtimeRecords = w.overtimeRecords||[]; w.absenceRecords = w.absenceRecords||[]; w.payments = w.payments||[]; w.shiftStart = w.shiftStart||"09:00"; w.shiftEnd = w.shiftEnd||"18:00"; w.weeklyWage = w.weeklyWage||500000; w.overtimeRate = w.overtimeRate||1.5; w.lateDeductionRate = w.lateDeductionRate||1.0; w.zkUID = w.zkUID||null; });
+        Object.keys(productionModelsProgress).forEach(m => updateProductionModelStatus(m));
+        refreshAllUI();
+    } catch(e) {
+        console.warn('Load failed, using local data');
+    }
+}
 
     function updateProductionModelStatus(model) {
         if (!productionModelsProgress[model]) productionModelsProgress[model] = { completedPhases: [], manualCompleted: false, tasks: [], status: 'pending', distributions: {} };
