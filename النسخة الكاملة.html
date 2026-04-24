@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>نظام إدارة المعمل الشامل - النسخة النهائية المُصلحة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+       <style>
+    /* ========== إعدادات عامة للوضوح والأداء (تصميم زجاجي) ========== */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Cairo', 'Tahoma', sans-serif;
+    }
+
+    body {
+        background: linear-gradient(145deg, #0b0f1c 0%, #141a2b 100%);
+        min-height: 100vh;
+        padding: 20px;
+        color: #f1f5f9;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    body.light-mode {
+        background: linear-gradient(145deg, #f0f4fa 0%, #e2eaf3 100%);
+        color: #0f172a;
+    }
+
+    .container {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* زجاج ثقيل للهيدر والكروت الرئيسية */
+    .glass-heavy,
+    .main-header,
+    .card,
+    .modal-content {
+        background: rgba(20, 30, 45, 0.75);
+        /* backdrop-filter: blur(6px); */
+        -webkit-backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 28px;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    body.light-mode .glass-heavy,
+    body.light-mode .main-header,
+    body.light-mode .card,
+    body.light-mode .modal-content {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        color: #0f172a;
+    }
+
+    /* زجاج خفيف للعناصر الداخلية (بدون blur لتحسين الأداء) */
+    .glass-light,
+    .worker-select-btn,
+    .phase-item,
+    .completion-group,
+    .log-item,
+    .stats-grid .stat-card,
+    .worker-card {
+        background: rgba(20, 30, 45, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+    }
+
+    body.light-mode .glass-light,
+    body.light-mode .worker-select-btn,
+    body.light-mode .phase-item,
+    body.light-mode .completion-group,
+    body.light-mode .log-item,
+    body.light-mode .stats-grid .stat-card,
+    body.light-mode .worker-card {
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        color: #0f172a;
+    }
+
+    /* حقول الإدخال والأزرار */
+    input,
+    select,
+    textarea,
+    .input-glass {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 12px 18px;
+        color: inherit;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    body.light-mode input,
+    body.light-mode select,
+    body.light-mode textarea {
+        background: white;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #38bdf8;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+
+    /* أزرار */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 40px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #38bdf8, #0284c7);
+        color: white;
+        border: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #4ade80, #16a34a);
+        color: white;
+        border: none;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #fbbf24, #d97706);
+        color: white;
+        border: none;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #f87171, #dc2626);
+        color: white;
+        border: none;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #a78bfa, #7c3aed);
+        color: white;
+        border: none;
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #38bdf8;
+        color: #38bdf8;
+    }
+
+    body.light-mode .btn-outline {
+        color: #0284c7;
+        border-color: #0284c7;
+    }
+
+    /* تبويبات */
+    .main-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        padding: 10px;
+        background: rgba(20, 30, 45, 0.3);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border-radius: 50px;
+    }
+
+    .main-tab-btn {
+        padding: 12px 24px;
+        border-radius: 40px;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .main-tab-btn:hover {
+        background: rgba(56, 189, 248, 0.1);
+        color: #e0f2fe;
+    }
+
+    .main-tab-btn.active {
+        background: #38bdf8;
+        color: white;
+        box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3);
+    }
+
+    .inner-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .inner-tab-btn {
+        padding: 8px 20px;
+        border-radius: 30px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cbd5e1;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .inner-tab-btn.active {
+        background: #0284c7;
+        color: white;
+        border-color: #0284c7;
+    }
+
+    /* جداول */
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        background: rgba(56, 189, 248, 0.15);
+        padding: 12px 8px;
+        font-weight: 600;
+        color: #bae6fd;
+    }
+
+    body.light-mode th {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    td {
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+    }
+
+    body.light-mode td {
+        border-bottom-color: #e2e8f0;
+    }
+
+    .badge {
+        background: #3a3a5a;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+    }
+
+    .badge-success {
+        background: #10b981;
+        color: white;
+    }
+
+    .badge-warning {
+        background: #f59e0b;
+        color: white;
+    }
+
+    /* مودال وتوست */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        max-width: 500px;
+        width: 90%;
+        padding: 30px;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #1e293b;
+        color: white;
+        padding: 14px 28px;
+        border-radius: 50px;
+        z-index: 9999;
+        animation: slideIn 0.3s;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* تحسينات إضافية للبطاقات */
+    .card {
+        padding: 25px;
+        margin-bottom: 0;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        font-weight: 700;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: inherit;
+        background: transparent;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
+    }
+
+    .card-body.collapsed {
+        display: none;
+    }
+
+    .grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .grid-3col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+    }
+
+    /* تصحيح ألوان النصوص في الوضع النهاري */
+    body.light-mode .main-header h1,
+    body.light-mode .card-header,
+    body.light-mode .btn,
+    body.light-mode .main-tab-btn,
+    body.light-mode .inner-tab-btn {
+        color: #0f172a;
+    }
+
+    body.light-mode .main-tab-btn.active {
+        color: white;
+    }
+
+    /* ضبط الروؤس */
+    .main-header h1 i,
+    .main-header h1 {
+        background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    body.light-mode .main-header h1 i,
+    body.light-mode .main-header h1 {
+        background: linear-gradient(135deg, #0284c7, #0ea5e9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* تجاوب */
+    @media (max-width: 768px) {
+        .cards-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .grid-2col,
+        .grid-3col {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    /* الحفاظ على تنسيقات خاصة */
+    .worker-select-dropdown {
+        background: rgba(20, 30, 45, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    body.light-mode .worker-select-dropdown {
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .status-completed {
+        background: #10b981;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .status-incomplete {
+        background: #f59e0b;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .group-phase-badge {
+        background: #38bdf8;
+        color: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+    }
+	    /* ضمان وضوح النص في الحقول المعطلة أو الخاصة */
+    .worker-select-btn span,
+    .worker-select-item,
+    .log-item,
+    .phase-item,
+    .completion-group strong,
+    .group-phases span,
+    #productionModelStatusMsg,
+    #workerDashboard .worker-card .value,
+    #workerDashboard .worker-card {
+        color: inherit;
+    }
+
+    body.light-mode .worker-select-btn span,
+    body.light-mode .worker-select-item,
+    body.light-mode .log-item,
+    body.light-mode .phase-item,
+    body.light-mode .completion-group strong {
+        color: #0f172a;
+    }
+
+    /* تحسين شكل زر اختيار العامل */
+    .worker-select-btn {
+        padding: 12px 16px;
+        cursor: pointer;
+    }
+
+    .worker-select-dropdown {
+        border-radius: 20px;
+    }
+
+    /* إخفاء أيقونة القائمة المنسدلة إذا لزم الأمر */
+    .fa-chevron-down.toggle-icon {
+        transition: transform 0.3s;
+    }
+
+    .card-header.collapsed .fa-chevron-down {
+        transform: rotate(-180deg);
+    }
+	/* إصلاح ظهور التبويبات الداخلية بشكل صحيح */
+.main-tab-pane {
+    display: none;
+}
+.main-tab-pane.active {
+    display: block;
+}
+.inner-tab-pane {
+    display: none;
+}
+.inner-tab-pane.active {
+    display: block;
+}
+
+/* تصحيح وضعية المحتوى داخل التبويبات */
+#tab-production,
+#tab-fixed,
+#tab-settings,
+#tab-requests {
+    padding: 0 10px; /* مسافة بسيطة لعدم الالتصاق بالحافة */
+}
+</style>
+    </style>
+</head>
+<body>
+<!-- شاشة تسجيل الدخول -->
+<div id="loginScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a2a3a 0%, #0f1a26 100%); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+    <div style="background: white; border-radius: 48px; padding: 40px; max-width: 450px; width: 90%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+        <i class="fas fa-industry" style="font-size: 60px; color: #2c7da0; margin-bottom: 20px;"></i>
+        <h2 style="margin-bottom: 20px; color: #1e293b;">نظام إدارة المعمل الشامل</h2>
+        <p style="margin-bottom: 30px; color: #5b6e8c;">الرجاء تسجيل الدخول باستخدام حساب Google المصرح له</p>
+        <div id="googleSignInBtn" style="display: flex; justify-content: center;"></div>
+        <p id="loginErrorMsg" style="margin-top: 20px; color: #c0392b; font-size: 14px;"></p>
+        <hr style="margin: 30px 0 10px; border-color: #e2e8f0;">
+        <button id="skipLoginBtn" style="background: none; border: none; color: #2c7da0; text-decoration: underline; cursor: pointer; font-size: 14px;">تخطي (للتطوير فقط)</button>
+    </div>
+</div>
+
+<div id="mainAppContainer" style="display: none;">
+<div class="container">
+    <div class="main-header">
+        <h1><i class="fas fa-industry"></i> نظام إدارة المعمل الشامل</h1>
+        <div class="header-actions">
+            <span id="currentUserDisplay"></span>
+            <button id="darkModeToggle" class="btn btn-outline"><i class="fas fa-moon"></i> وضع الليل</button>
+            <button id="globalBackupBtn" class="btn btn-primary"><i class="fas fa-download"></i> نسخ احتياطي</button>
+            <button id="globalRestoreBtn" class="btn btn-success"><i class="fas fa-upload"></i> استعادة</button>
+            <div class="exchange-rate">
+                <span><i class="fas fa-dollar-sign"></i> سعر الدولار:</span>
+                <input type="number" id="usdRate" value="11800" step="100">
+                <span>ل.س</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-tabs">
+        <button class="main-tab-btn active" data-tab="tab-production"><i class="fas fa-tshirt"></i> قسم العمل الإنتاجي</button>
+        <button class="main-tab-btn" data-tab="tab-fixed"><i class="fas fa-box"></i> قسم العمل الثابت</button>
+        <button class="main-tab-btn" data-tab="tab-settings"><i class="fas fa-cog"></i> الإعدادات</button>
+        <button class="main-tab-btn" data-tab="tab-requests" style="display: none;"><i class="fas fa-tasks"></i> طلبات التعديل <span id="pendingRequestsCount" class="request-badge" style="background:#e67e22; color:white; border-radius:20px; padding:2px 8px; font-size:12px; margin-right:5px;">0</span></button>
+    </div>
+
+    <!-- تبويب طلبات التعديل -->
+    <div id="tab-requests" class="main-tab-pane">
+        <div class="card">
+            <div class="card-header"><span><i class="fas fa-tasks"></i> طلبات تعديل المهام المعلقة</span></div>
+            <div class="card-body">
+                <div id="pendingRequestsList"></div>
+            </div>
+        </div>
+    </div>
+        <!-- تبويب العمل الإنتاجي -->
+    <div id="tab-production" class="main-tab-pane active">
+        <div class="inner-tabs">
+            <button class="inner-tab-btn active" data-inner-tab="production-operations"><i class="fas fa-play-circle"></i> العمليات</button>
+            <button class="inner-tab-btn" data-inner-tab="production-resources"><i class="fas fa-users-cog"></i> الموارد</button>
+            <button class="inner-tab-btn" data-inner-tab="production-reports"><i class="fas fa-chart-bar"></i> التقارير</button>
+        </div>
+
+        <div id="production-operations" class="inner-tab-pane active">
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header" data-target="productionAttendanceBody">
+                        <span><i class="fas fa-fingerprint"></i> الحضور والغياب</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="card-body" id="productionAttendanceBody">
+                        <div class="grid-2col">
+                            <select id="productionAttendanceWorkerSelect"></select>
+                            <div style="display:flex; gap:5px;">
+                                <button id="productionCheckinBtn" class="btn btn-success">دخول</button>
+                                <button id="productionCheckoutBtn" class="btn btn-warning">خروج</button>
+                            </div>
+                        </div>
+                        <button id="productionAbsentBtn" class="btn btn-danger" style="width:100%; margin-top:8px;">تسجيل غياب</button>
+                        <div style="margin-top: 10px; display: flex; gap: 8px;">
+                            <input type="date" id="productionAttFilterStart" style="width:140px;">
+                            <input type="date" id="productionAttFilterEnd" style="width:140px;">
+                            <button id="productionApplyAttFilterBtn" class="btn btn-sm btn-primary">عرض</button>
+                        </div>
+                        <div id="productionAttendanceLogs" style="margin-top:15px; max-height:200px; overflow-y:auto;"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header" data-target="productionTaskBody">
+                        <span><i class="fas fa-clipboard-check"></i> تسجيل إنجاز مهمة</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="card-body" id="productionTaskBody">
+                        <div class="grid-2col">
+                            <div><label>اختر العامل</label><select id="productionWorkerForTask"></select></div>
+                            <div><label>اختر المهمة</label><select id="productionPhaseForTask"></select></div>
+                        </div>
+                        <div class="grid-2col">
+                            <div>
+                                <label>رقم الموديل (حروف/أرقام)</label>
+                                <input type="text" id="productionTaskModel" list="productionModelList" autocomplete="off" placeholder="مثال: A1400">
+                                <datalist id="productionModelList"></datalist>
+                                <div id="productionModelRecent" class="model-recent"></div>
+                            </div>
+                            <div><label>عدد القطع</label><input type="number" id="productionTaskQuantity" placeholder="العدد"></div>
+                        </div>
+                        <div class="grid-2col">
+                            <div>
+                                <label>سعر المهمة (ل.س)</label>
+                                <input type="number" id="productionTaskPrice">
+                                <small id="productionTaskPriceUSD" style="display:block; margin-top:4px;"></small>
+                            </div>
+                            <div><button id="productionAssignTaskBtn" class="btn btn-success">تسجيل</button></div>
+                        </div>
+                        <button id="productionDistributeTaskBtn" class="btn btn-info" style="width:100%; margin-top:10px;"><i class="fas fa-users"></i> توزيع على عمال</button>
+                        <div id="productionModelStatusMsg" style="margin-top:10px; padding:8px; border-radius:16px; background:#f8f9fa; font-size:12px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="production-resources" class="inner-tab-pane">
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header" data-target="productionWorkersBody">
+                        <span><i class="fas fa-users"></i> إدارة عمال الإنتاج</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="card-body" id="productionWorkersBody">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div><label>اسم العامل الجديد</label><input type="text" id="productionNewWorkerName" placeholder="أدخل اسم العامل"></div>
+                            <div><label>البريد الإلكتروني</label><input type="email" id="productionNewWorkerEmail" placeholder="example@gmail.com"></div>
+                            <div><label>الدور</label><select id="productionNewWorkerRole"><option value="worker">عامل</option><option value="production_supervisor">مشرف إنتاج</option><option value="admin">مدير</option></select></div>
+                            <div><label>رقم العامل في جهاز البصمة (zkUID)</label><input type="number" id="productionNewWorkerZKUID" placeholder="مثال: 5"></div>
+                        </div>
+                        <button id="productionAddWorkerBtn" class="btn btn-primary" style="margin-top:8px; width:100%;">إضافة عامل</button>
+                        <div class="grid-2col" style="margin-top:10px;">
+                            <div><label>اختر عامل للحذف</label><select id="productionRemoveWorkerSelect"></select><button id="productionRemoveWorkerBtn" class="btn btn-danger" style="margin-top:8px; width:100%;">حذف</button></div>
+                        </div>
+                        <div class="grid-2col" style="margin-top:10px;">
+                            <div><label>وقت بدء الدوام</label><input type="time" id="productionShiftStart" value="09:00"></div>
+                            <div><label>وقت انتهاء الدوام</label><input type="time" id="productionShiftEnd" value="19:00"></div>
+                        </div>
+                        <button id="productionUpdateShiftBtn" class="btn btn-sm btn-info" style="width:100%;">تحديث دوام العامل المختار</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header" data-target="productionPhasesBody">
+                        <span><i class="fas fa-tasks"></i> المهام الإنتاجية</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="card-body" id="productionPhasesBody">
+                        <div class="grid-2col">
+                            <div><label>اسم المهمة الجديدة</label><input type="text" id="productionPhaseName" placeholder="مثال: تنظيف، كي، تغليف"></div>
+                            <div><label>سعر المهمة (ل.س)</label><input type="number" id="productionPhasePrice" placeholder="أدخل السعر"></div>
+                        </div>
+                        <button id="productionAddPhaseBtn" class="btn btn-primary" style="width:100%; margin-top:8px;">إضافة مهمة</button>
+                        <div class="table-responsive" style="margin-top:15px; max-height:200px; overflow-y:auto;">
+                            <table style="width:100%"><thead><tr><th>المهمة</th><th>السعر (ل.س)</th><th></th></tr></thead><tbody id="productionPhasesList"></tbody></table>
+                        </div>
+                        <div class="completion-groups-container" style="margin-top:20px;">
+                            <h4><i class="fas fa-cog"></i> مجموعات الإكمال التلقائي</h4>
+                            <p style="font-size:12px; color:#666; margin-bottom:10px;">الموديل يعتبر مكتملاً عند تحقيق أي مجموعة</p>
+                            <div id="productionCompletionGroupsList"></div>
+                            <button id="productionAddCompletionGroupBtn" class="btn btn-sm btn-primary" style="margin-top:10px; width:100%;"><i class="fas fa-plus"></i> إضافة مجموعة جديدة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="production-reports" class="inner-tab-pane">
+            <div class="card">
+                <div class="card-header" data-target="productionWorkersTableBody">
+                    <span><i class="fas fa-list"></i> قائمة العمال</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="card-body" id="productionWorkersTableBody">
+                    <div class="period-control" style="background:#f1f5f9; padding:12px; border-radius:24px; margin-bottom:15px; display:flex; flex-wrap:wrap; gap:12px;">
+                        <div class="form-group" style="flex:1;"><label>من تاريخ</label><input type="date" id="productionGlobalStartDate"></div>
+                        <div class="form-group" style="flex:1;"><label>إلى تاريخ</label><input type="date" id="productionGlobalEndDate"></div>
+                        <button id="productionApplyPeriodBtn" class="btn btn-primary">تطبيق الفترة</button>
+                        <button id="productionResetPeriodBtn" class="btn btn-outline">آخر 7 أيام</button>
+                        <button id="productionExportPdfBtn" class="btn btn-success"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button id="productionExportExcelBtn" class="btn btn-success"><i class="fas fa-file-excel"></i> Excel</button>
+                    </div>
+                    <div class="search-box" style="margin-bottom:15px; display:flex; gap:10px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="productionSearchInput" placeholder="ابحث بالاسم، المهمة، رقم الموديل..." style="flex:2;">
+                        <select id="productionSearchType" style="flex:1;">
+                            <option value="all">🔍 بحث شامل (الكل)</option>
+                            <option value="worker">👤 اسم العامل</option>
+                            <option value="phase">📋 اسم المهمة</option>
+                            <option value="model">🔢 رقم الموديل</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="productionWorkersMainTable">
+                            <thead><tr><th>#</th><th>اسم العامل</th><th>التأخيرات والغياب</th><th>المهام المنجزة</th><th>الأجور (ل.س)</th><th>الإجراءات</th></tr></thead>
+                            <tbody id="productionWorkersMainList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+                <div class="card-header" data-target="productionModelsTableBody">
+                    <span><i class="fas fa-chart-simple"></i> الموديلات والإنتاج - تتبع ذكي</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="card-body" id="productionModelsTableBody">
+                    <div class="table-responsive">
+                        <table id="productionModelsTable">
+                            <thead><tr><th>#</th><th>رقم الموديل</th><th>المهام المنفذة</th><th>الكمية</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
+                            <tbody id="productionModelsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                <button id="productionSmartReportBtn" class="btn btn-warning"><i class="fas fa-chart-line"></i> تقرير إنتاج ذكي</button>
+                <button id="productionEvaluationBtn" class="btn btn-info"><i class="fas fa-trophy"></i> تقييم العمال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- تبويب العمل الثابت -->
+    <div id="tab-fixed" class="main-tab-pane">
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header" data-target="fixedWorkersBody">
+                    <span><i class="fas fa-users"></i> إدارة عمال العمل الثابت</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="card-body" id="fixedWorkersBody">
+                    <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                        <div><label>الاسم</label><input type="text" id="fixedNewWorkerName"></div>
+                        <div><label>البريد الإلكتروني</label><input type="email" id="fixedNewWorkerEmail" placeholder="example@gmail.com"></div>
+                        <div><label>الدور</label><select id="fixedNewWorkerRole"><option value="worker">عامل</option><option value="fixed_supervisor">مشرف ثابت</option><option value="admin">مدير</option></select></div>
+                        <div><label>الأجر الأسبوعي</label><input type="number" id="fixedNewWeeklyWage" placeholder="500000"></div>
+                        <div><label>رقم البصمة</label><input type="number" id="fixedNewZkUid"></div>
+                        <div><label>بدء الدوام</label><input type="time" id="fixedNewShiftStart" value="09:00"></div>
+                        <div><label>انتهاء الدوام</label><input type="time" id="fixedNewShiftEnd" value="18:00"></div>
+                        <div><label>معامل الإضافي</label><input type="number" id="fixedNewOvertimeRate" value="1.5" step="0.1"></div>
+                        <div><label>معامل الخصم</label><input type="number" id="fixedNewLateRate" value="1.0" step="0.1"></div>
+                        <div><button id="fixedAddWorkerBtn" class="btn btn-primary">➕ إضافة</button></div>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <label><i class="fas fa-user-check"></i> اختر عاملًا للتعامل معه:</label>
+                        <div class="worker-select-wrapper">
+                            <div class="worker-select-btn" id="fixedWorkerSelectBtn">
+                                <span id="fixedSelectedWorkerName">-- اختر عاملاً --</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="worker-select-dropdown" id="fixedWorkerDropdown"></div>
+                        </div>
+                    </div>
+                    <div id="fixedSelectedWorkerActions" style="display:none;">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button id="fixedEditWorkerBtn" class="btn btn-info btn-sm"><i class="fas fa-edit"></i> تعديل</button>
+                            <button id="fixedDeleteWorkerBtn" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> حذف</button>
+                            <button id="fixedShowDetailsBtn" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> تفاصيل</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header" data-target="fixedAttendanceBody">
+                    <span><i class="fas fa-fingerprint"></i> الحضور والانصراف</span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="card-body" id="fixedAttendanceBody">
+                    <div class="form-grid" style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px;">
+                        <button id="fixedCheckinBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> دخول</button>
+                        <button id="fixedCheckoutBtn" class="btn btn-warning"><i class="fas fa-sign-out-alt"></i> خروج</button>
+                        <button id="fixedAbsentBtn" class="btn btn-danger"><i class="fas fa-user-slash"></i> غياب</button>
+                        <button id="fixedOvertimeBtn" class="btn btn-info"><i class="fas fa-clock"></i> إضافي</button>
+                        <button id="fixedImportAttendanceBtn" class="btn btn-primary"><i class="fas fa-file-import"></i> استيراد</button>
+                    </div>
+                    <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-top:10px;">
+                        <div><label>من</label><input type="date" id="fixedAttFilterStart"></div>
+                        <div><label>إلى</label><input type="date" id="fixedAttFilterEnd"></div>
+                        <button id="fixedApplyAttFilterBtn" class="btn btn-primary">عرض</button>
+                    </div>
+                    <div id="fixedAttendanceLogs" style="max-height:200px; overflow-y:auto; margin-top:15px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header" data-target="fixedSalaryBody">
+                <span><i class="fas fa-chart-line"></i> الرواتب والمدفوعات</span>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="card-body" id="fixedSalaryBody">
+                <div class="form-grid" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                    <div><label>من</label><input type="date" id="fixedSalaryStart"></div>
+                    <div><label>إلى</label><input type="date" id="fixedSalaryEnd"></div>
+                    <button id="fixedCalcSalaryBtn" class="btn btn-primary">🧮 احتساب</button>
+                    <button id="fixedResetPeriodBtn" class="btn btn-outline">📆 آخر 7 أيام</button>
+                    <button id="fixedExportExcelBtn" class="btn btn-success">Excel</button>
+                    <button id="fixedExportPdfBtn" class="btn btn-success">PDF</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="fixedSalaryTable">
+                        <thead><tr><th>الاسم</th><th>الأساسي</th><th>+إضافي</th><th>تأخير(د)</th><th>إضافي(د)</th><th>غياب</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th><th>دفعة</th></tr></thead>
+                        <tbody id="fixedSalaryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تبويب الإعدادات -->
+    <div id="tab-settings" class="main-tab-pane">
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header"><span><i class="fas fa-database"></i> النسخ الاحتياطي والتنظيف</span></div>
+                <div class="card-body">
+                    <p>نسخ احتياطي كامل لجميع بيانات المعمل (إنتاجي + ثابت).</p>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button id="settingsBackupBtn" class="btn btn-primary"><i class="fas fa-download"></i> نسخ احتياطي</button>
+                        <button id="settingsRestoreBtn" class="btn btn-success"><i class="fas fa-upload"></i> استعادة</button>
+                        <button id="settingsCleanupBtn" class="btn btn-warning"><i class="fas fa-broom"></i> تنظيف البيانات القديمة</button>
+                    </div>
+                    <hr style="margin:20px 0;">
+                    <p><i class="fas fa-file-import"></i> استيراد سجلات الحضور من ملف نصي (ZKTeco):</p>
+                    <button id="settingsImportTextBtn" class="btn btn-info"><i class="fas fa-file-upload"></i> اختر ملف .txt</button>
+                    <p style="margin-top:10px; font-size:0.75rem;">* الاستيراد يعمل لكلا القسمين حسب رقم البصمة.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span><i class="fas fa-sliders-h"></i> إعدادات أخرى</span></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>سعر صرف الدولار (ل.س)</label>
+                        <input type="number" id="settingsUsdRate" value="11800" step="100">
+                    </div>
+                    <button id="settingsUpdateExchangeBtn" class="btn btn-primary">تحديث أسعار العمل الإنتاجي</button>
+                    <hr>
+                    <button id="settingsDarkModeBtn" class="btn btn-outline"><i class="fas fa-moon"></i> تبديل الوضع الليلي</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ==================== واجهة العامل المبسطة ==================== -->
+<div id="workerDashboard" style="display: none;">
+    <div class="main-header">
+        <h1><i class="fas fa-user"></i> لوحة تحكم العامل</h1>
+        <div class="header-actions">
+            <span id="workerNameDisplay" style="margin-left: 15px; color: #a0c4d8;"></span>
+            <button id="workerLogoutBtn" class="btn btn-outline" style="background:#c0392b; color:white;"><i class="fas fa-sign-out-alt"></i> خروج</button>
+        </div>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="worker-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
+        <div class="worker-card" style="background: #f8fafc; border-radius: 20px; padding: 20px; text-align: center;">
+            <i class="fas fa-calendar-check" style="font-size: 28px; color: #2c7da0; margin-bottom: 10px;"></i>
+            <div class="value" id="wdWorkDays" style="font-size: 24px; font-weight: bold;">0</div>
+            <div>أيام العمل</div>
+        </div>
+        <div class="worker-card" style="background: #f8fafc; border-radius: 20px; padding: 20px; text-align: center;">
+            <i class="fas fa-user-slash" style="font-size: 28px; color: #e67e22; margin-bottom: 10px;"></i>
+            <div class="value" id="wdAbsences" style="font-size: 24px; font-weight: bold;">0</div>
+            <div>أيام الغياب</div>
+        </div>
+        <div class="worker-card" style="background: #f8fafc; border-radius: 20px; padding: 20px; text-align: center;">
+            <i class="fas fa-clock" style="font-size: 28px; color: #e67e22; margin-bottom: 10px;"></i>
+            <div class="value" id="wdLateMins" style="font-size: 24px; font-weight: bold;">0</div>
+            <div>دقائق التأخير</div>
+        </div>
+        <div class="worker-card" style="background: #f8fafc; border-radius: 20px; padding: 20px; text-align: center;">
+            <i class="fas fa-hourglass-end" style="font-size: 28px; color: #27ae60; margin-bottom: 10px;"></i>
+            <div class="value" id="wdOvertimeMins" style="font-size: 24px; font-weight: bold;">0</div>
+            <div>دقائق إضافي</div>
+        </div>
+        <div class="worker-card" style="background: #f8fafc; border-radius: 20px; padding: 20px; text-align: center;">
+            <i class="fas fa-money-bill-wave" style="font-size: 28px; color: #2c7da0; margin-bottom: 10px;"></i>
+            <div class="value" id="wdTotalSalary" style="font-size: 24px; font-weight: bold;">0</div>
+            <div>إجمالي الأجور</div>
+        </div>
+    </div>
+
+    <div class="cards-grid">
+        <!-- بطاقة تسجيل الحضور -->
+        <div class="card">
+            <div class="card-header">🕒 تسجيل الحضور</div>
+            <div class="card-body" style="display: flex; gap: 10px; justify-content: center;">
+                <button id="wdCheckinBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> دخول</button>
+                <button id="wdCheckoutBtn" class="btn btn-warning"><i class="fas fa-sign-out-alt"></i> خروج</button>
+            </div>
+        </div>
+        <!-- بطاقة تسجيل مهمة جديدة -->
+        <div class="card">
+            <div class="card-header">✏️ تسجيل مهمة جديدة</div>
+            <div class="card-body">
+                <div class="form-group"><label>المهمة</label><select id="wdTaskPhase"></select></div>
+                <div class="form-group"><label>رقم الموديل</label><input type="text" id="wdTaskModel" placeholder="أدخل رقم الموديل"></div>
+                <div class="form-group"><label>عدد القطع</label><input type="number" id="wdTaskQuantity" placeholder="أدخل العدد"></div>
+                <button id="wdSubmitTaskBtn" class="btn btn-primary" style="width:100%;">تسجيل المهمة</button>
+                <button id="wdDistributeTaskBtn" class="btn btn-info" style="width:100%; margin-top:8px;"><i class="fas fa-users"></i> توزيع على عمال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- قائمة المهام الأخيرة مع طلب تعديل -->
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-header">📋 مهامي الأخيرة</div>
+        <div class="card-body">
+            <div id="wdTasksList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== المودالات ==================== -->
+<!-- مودالات الإنتاج -->
+<div id="productionWorkerDetailsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="productionWorkerModalTitle">تفاصيل العامل</h3><span class="close-modal" onclick="closeModal('productionWorkerDetailsModal')">&times;</span></div><div class="modal-filter"><div class="filter-group"><label>من تاريخ</label><input type="date" id="productionWorkerModalStart"></div><div class="filter-group"><label>إلى تاريخ</label><input type="date" id="productionWorkerModalEnd"></div><button id="productionApplyWorkerFilterBtn" class="btn-sm btn-primary">تطبيق</button><button id="productionResetWorkerFilterBtn" class="btn-sm btn-info">عرض الكل</button></div><div id="productionWorkerDetailsContent"></div><div id="productionWorkerDetailsTotal"></div><div style="display:flex; gap:10px; margin-top:15px;"><button id="productionPrintReceiptBtn" class="btn-info btn-sm"><i class="fas fa-print"></i> طباعة</button><button id="productionAddPaymentFromDetailsBtn" class="btn-success btn-sm"><i class="fas fa-money-bill"></i> دفعة</button><button id="productionAddAdjustmentFromDetailsBtn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> تعديل</button></div></div></div>
+<div id="productionEditTaskModal" class="modal"><div class="modal-content" style="max-width:500px;"><div class="modal-header"><h3>تعديل المهمة</h3><span class="close-modal" onclick="closeModal('productionEditTaskModal')">&times;</span></div><div class="form-group"><label>المهمة</label><select id="productionEditPhaseId"></select></div><div class="form-group"><label>رقم الموديل</label><input type="text" id="productionEditModel" placeholder="مثال: A1400"></div><div class="form-group"><label>عدد القطع</label><input type="number" id="productionEditQuantity"></div><div class="form-group"><label>سعر القطعة (ل.س)</label><input type="number" id="productionEditPrice"></div><button id="productionConfirmEditBtn" class="btn-primary">حفظ التعديلات</button></div></div>
+<div id="productionEditGroupModal" class="modal"><div class="modal-content" style="max-width:500px;"><div class="modal-header"><h3>تعديل مجموعة الإكمال</h3><span class="close-modal" onclick="closeModal('productionEditGroupModal')">&times;</span></div><div class="form-group"><label>اسم المجموعة (اختياري)</label><input type="text" id="productionEditGroupName" placeholder="مثال: رش عادي"></div><div class="form-group"><label>المهام المطلوبة</label><div style="display:flex; gap:5px;"><input type="text" id="productionNewPhaseForGroup" placeholder="اسم المهمة"><button id="productionAddPhaseToGroupBtn" class="btn-sm btn-success">إضافة</button></div></div><div id="productionGroupPhasesList" style="margin:10px 0; display:flex; flex-wrap:wrap; gap:5px;"></div><button id="productionSaveGroupBtn" class="btn-primary">حفظ المجموعة</button></div></div>
+<div id="productionConfirmDuplicateModal" class="modal"><div class="modal-content confirm-modal"><div class="modal-header"><h3>⚠️ تنبيه</h3><span class="close-modal" onclick="closeModal('productionConfirmDuplicateModal')">&times;</span></div><p id="productionDuplicateMessage">المهمة تم تنفيذها مسبقاً على هذا الموديل</p><div style="display:flex; gap:15px; justify-content:center; margin-top:20px;"><button id="productionConfirmAddBtn" class="btn-warning">نعم، إضافة رغم التكرار</button><button id="productionCancelAddBtn" class="btn-primary">لا، إلغاء</button></div></div></div>
+<div id="productionPaymentModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>تسجيل دفعة</h3><span class="close-modal" onclick="closeModal('productionPaymentModal')">&times;</span></div><div class="form-group"><label>المبلغ (ل.س)</label><input type="number" id="productionPaymentAmount"></div><div class="form-group"><label>طريقة الدفع</label><select id="productionPaymentMethod"><option>نقدي</option><option>تحويل</option></select></div><button id="productionConfirmPaymentBtn" class="btn-success">تأكيد</button></div></div>
+<div id="productionAdjustmentModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>إضافة خصم/مكافأة</h3><span class="close-modal" onclick="closeModal('productionAdjustmentModal')">&times;</span></div><div class="form-group"><label>النوع</label><select id="productionAdjustmentType"><option value="discount">خصم</option><option value="bonus">مكافأة</option></select></div><div class="form-group"><label>المبلغ (ل.س)</label><input type="number" id="productionAdjustmentAmount"></div><div class="form-group"><label>السبب</label><input type="text" id="productionAdjustmentReason"></div><button id="productionConfirmAdjustmentBtn" class="btn-primary">تأكيد</button></div></div>
+<div id="productionModelDetailsModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="productionModelDetailsTitle">تفاصيل الموديل</h3><span class="close-modal" onclick="closeModal('productionModelDetailsModal')">&times;</span></div><div id="productionModelDetailsContent"></div><div style="margin-top:15px;"><button id="productionManualCompleteBtn" class="btn-warning btn-sm"><i class="fas fa-check-double"></i> إنهاء يدوياً</button></div></div></div>
+<div id="productionSmartReportModal" class="modal"><div class="modal-content" style="max-width:1000px;"><div class="modal-header"><h3><i class="fas fa-chart-line"></i> التقرير الذكي للإنتاج</h3><span class="close-modal" onclick="closeModal('productionSmartReportModal')">&times;</span></div><div class="period-control"><div class="form-group"><label>من تاريخ</label><input type="date" id="productionReportStartDate"></div><div class="form-group"><label>إلى تاريخ</label><input type="date" id="productionReportEndDate"></div><button id="productionGenerateReportBtn" class="btn-primary">عرض التقرير</button></div><div id="productionReportContent"></div></div></div>
+<div id="productionEvaluationModal" class="modal"><div class="modal-content" style="max-width:1000px;"><div class="modal-header"><h3><i class="fas fa-trophy"></i> تقييم العمال الذكي</h3><span class="close-modal" onclick="closeModal('productionEvaluationModal')">&times;</span></div><div class="period-control"><div class="form-group"><label>من تاريخ</label><input type="date" id="productionEvalStartDate"></div><div class="form-group"><label>إلى تاريخ</label><input type="date" id="productionEvalEndDate"></div><button id="productionGenerateEvalBtn" class="btn-primary">عرض التقييم</button></div><div id="productionEvalContent"></div></div></div>
+<div id="productionDistributionModal" class="modal"><div class="modal-content" style="max-width:1200px;"><div class="modal-header"><h3 id="productionDistModalTitle">توزيع مهمة</h3><span class="close-modal" onclick="closeModal('productionDistributionModal')">&times;</span></div><div id="productionDistModalContent"></div><div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;"><button id="productionCloseDistModalBtn" class="btn-primary">إغلاق</button><button id="productionSaveDistributionBtn" class="btn-success">حفظ التوزيع</button></div></div></div>
+
+<!-- مودالات العمل الثابت -->
+<div id="fixedWorkerDetailsModal" class="modal"><div class="modal-content" style="max-width:700px;"><div class="modal-header"><h3 id="fixedDetailsWorkerName">تفاصيل العامل</h3><span class="close-modal" onclick="closeModal('fixedWorkerDetailsModal')">&times;</span></div><div class="form-grid" style="display:flex; gap:10px;"><div><label>من تاريخ</label><input type="date" id="fixedDetailsStart"></div><div><label>إلى تاريخ</label><input type="date" id="fixedDetailsEnd"></div><button id="fixedApplyDetailsFilter" class="btn btn-primary">تطبيق</button><button id="fixedResetDetailsFilter" class="btn btn-outline">عرض الكل</button></div><div id="fixedDetailsContent" style="margin:12px 0; max-height:300px; overflow-y:auto;"></div><div style="display:flex; gap:10px; margin-top:15px;"><button id="fixedAddPaymentFromDetails" class="btn btn-success"><i class="fas fa-money-bill"></i> دفعة</button><button id="fixedPrintReceiptBtn" class="btn btn-info"><i class="fas fa-print"></i> طباعة</button></div></div></div>
+<div id="fixedPaymentModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>💰 تسجيل دفعة</h3><span class="close-modal" onclick="closeModal('fixedPaymentModal')">&times;</span></div><div id="fixedPaymentAmountDisplay" style="background:#d1fae5; padding:12px; border-radius:40px; text-align:center; font-weight:bold; margin:12px 0;"></div><div class="form-group"><label>المبلغ</label><input type="number" id="fixedPaymentAmount"></div><div class="form-group"><label>التاريخ</label><input type="date" id="fixedPaymentDate"></div><div class="form-group"><label>طريقة الدفع</label><select id="fixedPaymentMethod"><option>نقدي</option><option>تحويل</option></select></div><div style="display:flex; gap:12px; margin-top:16px;"><button id="fixedConfirmPaymentBtn" class="btn btn-success">تأكيد</button><button onclick="closeModal('fixedPaymentModal')" class="btn btn-danger">إلغاء</button></div></div></div>
+<div id="fixedOvertimeModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>⏱️ إضافة دقائق إضافية</h3><span class="close-modal" onclick="closeModal('fixedOvertimeModal')">&times;</span></div><div class="form-group"><label>الدقائق</label><input type="number" id="fixedOvertimeMinutes" placeholder="مثال: 30"></div><div class="form-group"><label>التاريخ</label><input type="date" id="fixedOvertimeDate"></div><div style="display:flex; gap:12px; margin-top:16px;"><button id="fixedConfirmOvertimeBtn" class="btn btn-success">تأكيد</button><button onclick="closeModal('fixedOvertimeModal')" class="btn btn-danger">إلغاء</button></div></div></div>
+<div id="fixedEditWorkerModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>✏️ تعديل بيانات العامل</h3><span class="close-modal" onclick="closeModal('fixedEditWorkerModal')">&times;</span></div><div class="form-group"><label>الاسم</label><input type="text" id="fixedEditWorkerName"></div><div class="form-group"><label>الأجر الأسبوعي</label><input type="number" id="fixedEditWeeklyWage"></div><div class="form-group"><label>رقم البصمة</label><input type="number" id="fixedEditZkUid"></div><div class="form-group"><label>بدء الدوام</label><input type="time" id="fixedEditShiftStart"></div><div class="form-group"><label>انتهاء الدوام</label><input type="time" id="fixedEditShiftEnd"></div><div class="form-group"><label>معامل الإضافي</label><input type="number" id="fixedEditOvertimeRate" step="0.1" min="0"></div><div class="form-group"><label>معامل خصم التأخير</label><input type="number" id="fixedEditLateRate" step="0.1" min="0"></div><div style="display:flex; gap:12px; margin-top:16px;"><button id="fixedSaveWorkerEditBtn" class="btn btn-primary">حفظ</button><button onclick="closeModal('fixedEditWorkerModal')" class="btn btn-danger">إلغاء</button></div></div></div>
+<div id="fixedDeleteAttendanceModal" class="modal"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3>🗑️ تأكيد الحذف</h3><span class="close-modal" onclick="closeModal('fixedDeleteAttendanceModal')">&times;</span></div><p>هل أنت متأكد من حذف سجل الحضور هذا؟</p><div style="display:flex; gap:12px; margin-top:20px; justify-content:center;"><button id="fixedConfirmDeleteAttendanceBtn" class="btn btn-danger">نعم، احذف</button><button onclick="closeModal('fixedDeleteAttendanceModal')" class="btn btn-outline">إلغاء</button></div></div></div>
+
+<!-- مودالات عامة -->
+<div id="handleRequestModal" class="modal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+            <h3>معالجة طلب التعديل</h3>
+            <span class="close-modal" onclick="closeModal('handleRequestModal')">&times;</span>
+        </div>
+        <div id="requestDetailsContent"></div>
+        <div class="form-group"><label>سبب الرفض (اختياري)</label><input type="text" id="rejectReasonInput"></div>
+        <div style="display:flex; gap:12px; margin-top:20px;">
+            <button id="approveRequestBtn" class="btn btn-success">موافقة</button>
+            <button id="rejectRequestBtn" class="btn btn-danger">رفض</button>
+            <button onclick="closeModal('handleRequestModal')" class="btn btn-outline">إلغاء</button>
+        </div>
+    </div>
+</div>
+<div id="globalConfirmModal" class="modal"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 id="globalConfirmTitle">تأكيد</h3><span class="close-modal" onclick="closeModal('globalConfirmModal')">&times;</span></div><p id="globalConfirmMessage">هل أنت متأكد؟</p><div style="display:flex; gap:12px; margin-top:20px; justify-content:center;"><button id="globalConfirmYesBtn" class="btn btn-danger">نعم</button><button id="globalConfirmNoBtn" class="btn btn-outline">لا</button></div></div></div>
+<div id="workerEditRequestModal" class="modal">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>طلب تعديل مهمة</h3>
+            <span class="close-modal" onclick="closeModal('workerEditRequestModal')">&times;</span>
+        </div>
+        <div class="form-group"><label>الموديل</label><input type="text" id="reqEditModel"></div>
+        <div class="form-group"><label>الكمية</label><input type="number" id="reqEditQuantity"></div>
+        <div class="form-group"><label>سبب التعديل (مطلوب)</label><input type="text" id="reqEditReason"></div>
+        <button id="submitEditRequestBtn" class="btn btn-primary">إرسال الطلب</button>
+    </div>
+</div>
+<div id="globalPromptModal" class="modal"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 id="globalPromptTitle">إدخال</h3><span class="close-modal" onclick="closeModal('globalPromptModal')">&times;</span></div><p id="globalPromptMessage">الرجاء الإدخال</p><div class="form-group"><input type="text" id="globalPromptInput" placeholder=""></div><div style="display:flex; gap:12px; margin-top:20px; justify-content:center;"><button id="globalPromptOkBtn" class="btn btn-primary">موافق</button><button id="globalPromptCancelBtn" class="btn btn-outline">إلغاء</button></div></div></div>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxSc1OFP4jqRHwJDImR_1iYbBR8KPWBHKo4Z-XtVQOLltKQNID5epeV2C9h6ei38Xvd/exec';
+let useCloud = true;
+
+// ==================== المتغيرات العامة والإعدادات الأولية ====================
+let productionWorkers = [];
+let productionPhases = [];
+let productionModelsProgress = {};
+let productionLastUsedModels = [];
+let productionCompletionGroups = [];
+let fixedWorkers = [];
+let pendingEditRequests = [];
+
+let productionCurrentWorkerId = null, productionPendingDuplicate = null, productionCurrentEditTask = { workerId: null, taskId: null };
+let productionCurrentGroupIndex = -1, productionTempGroupPhases = [];
+let productionCurrentDist = { phaseId: null, phaseName: null, price: null, model: null, parts: [] };
+
+let fixedSelectedWorkerId = null, fixedCurrentPaymentWorker = null, fixedCurrentEditWorker = null;
+let fixedPendingDeleteLogId = null, fixedPendingDeleteWorkerId = null;
+let globalConfirmCallback = null, globalPromptCallback = null;
+
+let currentUser = null;
+let currentWorkerForEditRequest = null;
+
+const WEEKLY_WORK_DAYS = 6;
+
+    let db = null, dbReady = false;
+
+    // دوال مساعدة
+    function showToast(msg, type='success') { 
+        let t = document.createElement('div'); 
+        t.className = `toast ${type}`; 
+        t.innerHTML = msg; 
+        document.body.appendChild(t); 
+        setTimeout(()=>t.remove(), 3000); 
+    }
+    function closeModal(id) { 
+        document.getElementById(id).style.display = 'none'; 
+        if (id === 'workerEditRequestModal') currentWorkerForEditRequest = null;
+    }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function formatNumber(x) { return Math.round(x || 0).toLocaleString(); }
+    function convertTo12Hour(t) { if(!t) return ''; let [h,m]=t.split(':'); let period = h>=12?'مساءً':'صباحاً'; let h12 = h%12||12; return `${h12}:${m} ${period}`; }
+    function calculateLateness(shiftStart, checkinTime) { if(!shiftStart||!checkinTime) return 0; let [sh,sm]=shiftStart.split(':').map(Number); let [ch,cm]=checkinTime.split(':').map(Number); return Math.max(0, (ch*60+cm)-(sh*60+sm)); }
+    function calculateOvertime(shiftEnd, checkoutTime) { if(!shiftEnd||!checkoutTime) return 0; let [eh,em]=shiftEnd.split(':').map(Number); let [ch,cm]=checkoutTime.split(':').map(Number); return Math.max(0, (ch*60+cm)-(eh*60+em)); }
+    function calculateWorkMinutes(shiftStart, shiftEnd) { 
+        if(!shiftStart||!shiftEnd) return 9*60; 
+        let [sh,sm]=shiftStart.split(':').map(Number); 
+        let [eh,em]=shiftEnd.split(':').map(Number); 
+        return (eh*60+em) - (sh*60+sm); // تم الإصلاح: إزالة +60 الخاطئة
+    }
+    function getMinuteValueFromWeeklyWage(weeklyWage, workMinutes) { return weeklyWage / WEEKLY_WORK_DAYS / workMinutes; }
+
+    // ==================== نظام المصادقة ====================
+    function initGoogleSignIn() {
+        if (typeof google === 'undefined') { setTimeout(initGoogleSignIn, 500); return; }
+        google.accounts.id.initialize({
+            client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+            callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+        });
+        google.accounts.id.renderButton(
+            document.getElementById('googleSignInBtn'),
+            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', width: '250' }
+        );
+    }
+
+    function handleCredentialResponse(response) {
+        try {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            const email = payload.email;
+            const name = payload.name;
+            
+            let user = productionWorkers.find(w => w.email === email) || fixedWorkers.find(w => w.email === email);
+            
+            if (!user) {
+                document.getElementById('loginErrorMsg').innerText = '❌ هذا الحساب غير مصرح له بالدخول.';
+                return;
+            }
+            
+            currentUser = {
+                email,
+                name,
+                role: user.role,
+                id: user.id,
+                type: productionWorkers.find(w => w.id === user.id) ? 'production' : 'fixed'
+            };
+            
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainAppContainer').style.display = 'block';
+            
+            applyRoleBasedUI(currentUser.role);
+            showToast(`👋 مرحباً، ${name}`, 'success');
+        } catch(e) {
+            showToast('خطأ في تسجيل الدخول', 'error');
+        }
+    }
+
+    function applyRoleBasedUI(role) {
+        const tabs = document.querySelectorAll('.main-tab-btn');
+        const productionTab = Array.from(tabs).find(b => b.dataset.tab === 'tab-production');
+        const fixedTab = Array.from(tabs).find(b => b.dataset.tab === 'tab-fixed');
+        const settingsTab = Array.from(tabs).find(b => b.dataset.tab === 'tab-settings');
+        const requestsTab = Array.from(tabs).find(b => b.dataset.tab === 'tab-requests');
+        
+        tabs.forEach(t => t.style.display = 'none');
+        document.querySelectorAll('.main-tab-pane').forEach(p => p.classList.remove('active'));
+        
+        if (role === 'admin') {
+            tabs.forEach(t => t.style.display = 'flex');
+            if (requestsTab) requestsTab.style.display = 'flex';
+            updatePendingRequestsBadge();
+        } else if (role === 'production_supervisor') {
+            productionTab.style.display = 'flex';
+            document.getElementById('tab-production').classList.add('active');
+        } else if (role === 'fixed_supervisor') {
+            fixedTab.style.display = 'flex';
+            document.getElementById('tab-fixed').classList.add('active');
+        } else if (role === 'worker') {
+            const mainTabs = document.querySelector('.main-tabs');
+            if (mainTabs) mainTabs.style.display = 'none';
+            ['tab-production', 'tab-fixed', 'tab-settings', 'tab-requests'].forEach(id => {
+                const pane = document.getElementById(id);
+                if (pane) pane.style.display = 'none';
+            });
+            const workerDash = document.getElementById('workerDashboard');
+            if (workerDash) workerDash.style.display = 'block';
+            showWorkerDashboard();
+        }
+        
+        let displayDiv = document.getElementById('currentUserDisplay');
+        if (!displayDiv) {
+            displayDiv = document.createElement('span');
+            displayDiv.id = 'currentUserDisplay';
+            displayDiv.style.marginRight = '15px';
+            displayDiv.style.color = '#a0c4d8';
+            document.querySelector('.header-actions').prepend(displayDiv);
+        }
+        const roleNames = { admin: 'مدير', production_supervisor: 'مشرف إنتاج', fixed_supervisor: 'مشرف ثابت', worker: 'عامل' };
+        displayDiv.innerHTML = `<i class="fas fa-user-circle"></i> ${currentUser.name} (${roleNames[role] || role})`;
+    }
+
+    // ==================== قاعدة البيانات ====================
+   // ==================== نظام التخزين الهجين (محلي + سحابي) ====================
+function saveLocalData() {
+    localStorage.setItem('production_workers', JSON.stringify(productionWorkers));
+    localStorage.setItem('production_phases', JSON.stringify(productionPhases));
+    localStorage.setItem('production_models', JSON.stringify(productionModelsProgress));
+    localStorage.setItem('production_completion_groups', JSON.stringify(productionCompletionGroups));
+    localStorage.setItem('production_last_models', JSON.stringify(productionLastUsedModels));
+    localStorage.setItem('fixed_workers', JSON.stringify(fixedWorkers));
+    localStorage.setItem('edit_requests', JSON.stringify(pendingEditRequests));
+}
+
+function loadLocalData() {
+    try {
+        if(localStorage.getItem('production_workers')) productionWorkers = JSON.parse(localStorage.getItem('production_workers'));
+        if(localStorage.getItem('production_phases')) productionPhases = JSON.parse(localStorage.getItem('production_phases'));
+        if(localStorage.getItem('production_models')) productionModelsProgress = JSON.parse(localStorage.getItem('production_models'));
+        if(localStorage.getItem('production_completion_groups')) productionCompletionGroups = JSON.parse(localStorage.getItem('production_completion_groups'));
+        if(localStorage.getItem('production_last_models')) productionLastUsedModels = JSON.parse(localStorage.getItem('production_last_models'));
+        if(localStorage.getItem('fixed_workers')) fixedWorkers = JSON.parse(localStorage.getItem('fixed_workers'));
+        if(localStorage.getItem('edit_requests')) pendingEditRequests = JSON.parse(localStorage.getItem('edit_requests'));
+        return true;
+    } catch(e) { return false; }
+}
+
+async function syncToCloud() {
+    if (!useCloud) return;
+    try {
+        const modelsArray = Object.entries(productionModelsProgress).map(([model, data]) => ({ model, ...data }));
+        await fetch(API_URL + '?action=write&sheet=production_workers&data=' + encodeURIComponent(JSON.stringify(productionWorkers)));
+        await fetch(API_URL + '?action=write&sheet=production_phases&data=' + encodeURIComponent(JSON.stringify(productionPhases)));
+        await fetch(API_URL + '?action=write&sheet=production_models&data=' + encodeURIComponent(JSON.stringify(modelsArray)));
+        await fetch(API_URL + '?action=write&sheet=production_completion_groups&data=' + encodeURIComponent(JSON.stringify(productionCompletionGroups)));
+        await fetch(API_URL + '?action=write&sheet=production_last_models&data=' + encodeURIComponent(JSON.stringify(productionLastUsedModels.map(m => ({ model: m })))));
+        await fetch(API_URL + '?action=write&sheet=fixed_workers&data=' + encodeURIComponent(JSON.stringify(fixedWorkers)));
+        await fetch(API_URL + '?action=write&sheet=edit_requests&data=' + encodeURIComponent(JSON.stringify(pendingEditRequests)));
+        console.log('✅ Synced to cloud');
+    } catch(e) { console.warn('Sync failed:', e); }
+}
+
+async function saveData() {
+    saveLocalData();
+    syncToCloud(); // في الخلفية بدون انتظار
+}
+
+async function loadFromCloud() {
+    if (!useCloud) return;
+    try {
+        const sheets = ['production_workers', 'production_phases', 'production_models', 'production_completion_groups', 'production_last_models', 'fixed_workers', 'edit_requests'];
+        const results = {};
+        for (let sheet of sheets) {
+            const resp = await fetch(API_URL + '?action=read&sheet=' + sheet);
+            const data = await resp.json();
+            if (Array.isArray(data)) results[sheet] = data;
+        }
+        if (results.production_workers) productionWorkers = results.production_workers;
+        if (results.production_phases) productionPhases = results.production_phases;
+        if (results.production_models) {
+            productionModelsProgress = {};
+            results.production_models.forEach(item => {
+                const model = item.model;
+                delete item.model;
+                productionModelsProgress[model] = item;
+            });
+        }
+        if (results.production_completion_groups) productionCompletionGroups = results.production_completion_groups;
+        if (results.production_last_models) {
+            productionLastUsedModels = results.production_last_models.map(i => i.model).filter(Boolean);
+        }
+        if (results.fixed_workers) fixedWorkers = results.fixed_workers;
+        if (results.edit_requests) pendingEditRequests = results.edit_requests;
+        return true;
+    } catch(e) {
+        console.warn('Cloud load failed, using local data');
+        return false;
+    }
+}
+
+async function loadData() {
+    // 1. تحميل سريع من المحلي
+    loadLocalData();
+    // 2. محاولة جلب أحدث نسخة من السحابة
+    const cloudSuccess = await loadFromCloud();
+    if (cloudSuccess) {
+        saveLocalData(); // تحديث المحلي
+    }
+    // 3. ضمان وجود بيانات افتراضية للمصفوفات الفارغة
+    if (!productionWorkers.length) {
+        productionWorkers = [{
+            id: 1, name: "خالد العمري", email: "", role: "worker",
+            attendanceLogs: [], tasks: [], payments: [], adjustments: [],
+            latenessRecords: [], absenceRecords: [], shiftStart: "09:00", shiftEnd: "19:00", zkUID: null
+        }];
+    }
+    if (!productionPhases.length) {
+        productionPhases = [
+            { id: 1, name: "تركيب قبة", price: 5000 },
+            { id: 2, name: "تسكير قبة", price: 5000 }
+        ];
+    }
+    if (!productionCompletionGroups.length) {
+        productionCompletionGroups = [{ name: "رش عادي", phases: ["تسكير قبة"] }];
+    }
+    // 4. تهيئة الحقول الافتراضية لجميع العمال
+    productionWorkers.forEach(w => {
+        w.email = w.email || '';
+        w.attendanceLogs = w.attendanceLogs || [];
+        w.tasks = w.tasks || [];
+        w.payments = w.payments || [];
+        w.adjustments = w.adjustments || [];
+        w.latenessRecords = w.latenessRecords || [];
+        w.absenceRecords = w.absenceRecords || [];
+        w.shiftStart = w.shiftStart || "09:00";
+        w.shiftEnd = w.shiftEnd || "19:00";
+        w.zkUID = w.zkUID || null;
+        w.overtimeRecords = w.overtimeRecords || [];
+    });
+    fixedWorkers.forEach(w => {
+        w.email = w.email || '';
+        w.attendanceLogs = w.attendanceLogs || [];
+        w.latenessRecords = w.latenessRecords || [];
+        w.overtimeRecords = w.overtimeRecords || [];
+        w.absenceRecords = w.absenceRecords || [];
+        w.payments = w.payments || [];
+        w.shiftStart = w.shiftStart || "09:00";
+        w.shiftEnd = w.shiftEnd || "18:00";
+        w.weeklyWage = w.weeklyWage || 500000;
+        w.overtimeRate = w.overtimeRate || 1.5;
+        w.lateDeductionRate = w.lateDeductionRate || 1.0;
+        w.zkUID = w.zkUID || null;
+    });
+    // 5. تحديث حالة الموديلات
+    Object.keys(productionModelsProgress).forEach(m => updateProductionModelStatus(m));
+    // 6. واجهات المستخدم
+    refreshAllUI();
+}
+
+    function updateProductionModelStatus(model) {
+        if (!productionModelsProgress[model]) productionModelsProgress[model] = { completedPhases: [], manualCompleted: false, tasks: [], status: 'pending', distributions: {} };
+        const mp = productionModelsProgress[model];
+        if (mp.manualCompleted) { mp.status = 'completed'; return 'completed'; }
+        let isCompleted = productionCompletionGroups.some(g => g.phases.every(p => mp.completedPhases.includes(p)));
+        mp.status = isCompleted ? 'completed' : 'incomplete';
+        return mp.status;
+    }
+
+    function checkProductionCanAddPhase(model, phaseName) {
+        if (!productionModelsProgress[model]) return { allowed: true, isDuplicate: false };
+        const mp = productionModelsProgress[model];
+        if (mp.manualCompleted) return { allowed: false, reason: `الموديل ${model} منتهي يدوياً`, isDuplicate: false };
+        const isDuplicate = mp.completedPhases.includes(phaseName);
+        let isCompleted = productionCompletionGroups.some(g => g.phases.every(p => mp.completedPhases.includes(p)));
+        if (isCompleted && !mp.manualCompleted && !isDuplicate) return { allowed: false, reason: `الموديل ${model} مكتمل`, isDuplicate: false };
+        if (isDuplicate) return { allowed: true, isDuplicate: true, reason: `المهمة "${phaseName}" مكررة` };
+        return { allowed: true, isDuplicate: false };
+    }
+
+    function addProductionPhaseToModelDirect(model, phaseName, workerId, quantity, price) {
+        if (!productionModelsProgress[model]) productionModelsProgress[model] = { completedPhases: [], manualCompleted: false, tasks: [], status: 'pending', distributions: {} };
+        const mp = productionModelsProgress[model];
+        if (!mp.completedPhases.includes(phaseName)) mp.completedPhases.push(phaseName);
+        mp.tasks.push({ phaseName, workerId, quantity, price, date: new Date().toISOString().slice(0,10), timestamp: Date.now() });
+        const oldStatus = mp.status;
+        updateProductionModelStatus(model);
+        if (mp.status === 'completed' && oldStatus !== 'completed') showToast(`🎉 الموديل ${model} اكتمل تلقائياً!`, 'success');
+    }
+
+    // ==================== دوال الإنتاج ====================
+    function addProductionAttendance(workerId, type) {
+        const w = productionWorkers.find(w=>w.id===workerId); if(!w) return;
+        const now = new Date(); const dateStr = now.toISOString().slice(0,10); const time24 = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        if (type === 'خروج') { if(!w.attendanceLogs.some(l=>l.date===dateStr && l.type==='دخول')) { showToast('يجب تسجيل دخول أولاً', 'error'); return; } if(w.attendanceLogs.some(l=>l.date===dateStr && l.type==='خروج')) { showToast('تم تسجيل خروج مسبقاً', 'warning'); return; } }
+        if (type === 'دخول') { if(w.attendanceLogs.some(l=>l.date===dateStr && l.type==='دخول')) { showToast('تم تسجيل دخول مسبقاً', 'warning'); return; } const late = calculateLateness(w.shiftStart, time24); if(late>0) w.latenessRecords.push({ date: dateStr, minutes: late }); }
+        const log = { type, datetime: `${dateStr} ${convertTo12Hour(time24)}`, date: dateStr, id: Date.now() + '-' + Math.random().toString(36) };
+        w.attendanceLogs.unshift(log); saveData(); refreshProductionUI(); showToast(`✅ ${type} ${w.name}`);
+    }
+
+    function addProductionAbsence(workerId) {
+        const w = productionWorkers.find(w=>w.id===workerId); if(!w) return;
+        const dateStr = new Date().toISOString().slice(0,10);
+        if(w.absenceRecords.some(a=>a.date===dateStr)) { showToast('تم تسجيل غياب مسبقاً', 'warning'); return; }
+        w.absenceRecords.push({ date: dateStr });
+        w.attendanceLogs.unshift({ type: 'غياب', datetime: dateStr, date: dateStr, id: Date.now()+'-'+Math.random().toString(36) });
+        saveData(); refreshProductionUI(); showToast(`📅 غياب ${w.name}`, 'warning');
+    }
+
+    function executeProductionAddTask(workerId, phaseId, model, quantity, customPrice) {
+        const w = productionWorkers.find(w=>w.id===workerId);
+        const phase = productionPhases.find(p=>p.id===phaseId);
+        if(!w || !phase) return false;
+        const price = customPrice || phase.price;
+        const usdRate = parseFloat(document.getElementById('usdRate').value) || 11800;
+        const now = new Date(); const dateStr = now.toISOString().slice(0,10);
+        const days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+        const task = { id: Date.now() + '-' + Math.random().toString(36), phaseId, phaseName: phase.name, model, quantity: parseFloat(quantity), pricePerUnit: price, total: quantity*price, priceUSD: price/usdRate, totalUSD: (quantity*price)/usdRate, date: dateStr, dayName: days[now.getDay()], timestamp: now.getTime() };
+        w.tasks.unshift(task);
+        addProductionPhaseToModelDirect(model, phase.name, workerId, quantity, price);
+        if (!productionLastUsedModels.includes(model)) { productionLastUsedModels.unshift(model); if (productionLastUsedModels.length > 10) productionLastUsedModels.pop(); }
+        saveData(); refreshProductionUI(); showToast(`✅ تم تسجيل ${phase.name} للعامل ${w.name}`); return true;
+    }
+
+    function addProductionTaskWithConfirm(workerId, phaseId, model, quantity, price, force=false) {
+        const w = productionWorkers.find(w=>w.id===workerId);
+        const phase = productionPhases.find(p=>p.id===phaseId);
+        if(!w || !phase) { showToast('خطأ في البيانات', 'error'); return false; }
+        if(!model || model.trim()==='') { showToast('أدخل رقم الموديل', 'error'); return false; }
+        if(!quantity || quantity<=0) { showToast('أدخل عدد القطع', 'error'); return false; }
+        const check = checkProductionCanAddPhase(model, phase.name);
+        if(!check.allowed) { showToast(check.reason, 'warning'); return false; }
+        if(check.isDuplicate && !force) {
+            productionPendingDuplicate = { workerId, phaseId, model, quantity, price, phaseName: phase.name };
+            document.getElementById('productionDuplicateMessage').innerHTML = `⚠️ المهمة "${phase.name}" تم تنفيذها مسبقاً على الموديل ${model}. هل تريد إضافتها رغم التكرار؟`;
+            openModal('productionConfirmDuplicateModal'); return false;
+        }
+        return executeProductionAddTask(workerId, phaseId, model, quantity, price);
+    }
+
+    // ==================== دوال التوزيع ====================
+    function openDistributionModal(phaseId, phaseName, phasePrice, model) {
+    productionCurrentDist = { phaseId, phaseName, price: phasePrice, model, parts: [] };
+    // تحميل الأجزاء المحفوظة مسبقاً إن وجدت
+    if (productionModelsProgress[model] && productionModelsProgress[model].distributions && productionModelsProgress[model].distributions[phaseName]) {
+        const savedParts = productionModelsProgress[model].distributions[phaseName].parts;
+        // نسخ عميق مع الاحتفاظ بـ taskId و completed
+        productionCurrentDist.parts = savedParts.map(p => ({
+            ...p,
+            // نترك taskId و completed كما هما ليتم التعرف عليهما في saveDistribution
+        }));
+    }
+    renderDistributionModal();
+    openModal('productionDistributionModal');
+}
+
+    function openDistributionModalForWorker(phaseId, phaseName, phasePrice, model, workerId) {
+        productionCurrentDist = { phaseId, phaseName, price: phasePrice, model, parts: [] };
+        if (productionModelsProgress[model] && productionModelsProgress[model].distributions && productionModelsProgress[model].distributions[phaseName]) {
+            productionCurrentDist.parts = productionModelsProgress[model].distributions[phaseName].parts.map(p => ({ ...p }));
+        }
+        renderDistributionModalForWorker(workerId);
+        openModal('productionDistributionModal');
+    }
+
+    function renderDistributionModal() {
+        const dist = productionCurrentDist;
+        document.getElementById('productionDistModalTitle').innerText = `توزيع مهمة: ${dist.phaseName} - موديل ${dist.model}`;
+        let html = `
+            <div style="margin-bottom:15px;"><label>سعر المهمة الأصلي: ${formatNumber(dist.price)} ل.س</label></div>
+            <table class="distribution-table">
+                <thead><tr><th>النوع</th><th>الاسم</th><th>الموديل</th><th>السعر</th><th>الكمية</th><th>العامل</th><th></th></tr></thead>
+                <tbody id="distPartsBody"></tbody>
+            </table>
+            <div style="margin-top:10px;">
+                <button id="addColorPartBtn" class="btn btn-sm btn-primary">+ إضافة لون</button>
+                <button id="addLinkPartBtn" class="btn btn-sm btn-primary">+ إضافة وصلة</button>
+            </div>
+        `;
+        document.getElementById('productionDistModalContent').innerHTML = html;
+        renderDistPartsTable();
+        
+        document.getElementById('addColorPartBtn').onclick = () => { dist.parts.push({ type: 'color', name: 'لون جديد', model: dist.model, price: dist.price, quantity: 1, workerId: null }); renderDistPartsTable(); };
+        document.getElementById('addLinkPartBtn').onclick = () => { dist.parts.push({ type: 'link', name: 'وصلة جديدة', model: dist.model, price: dist.price, quantity: 1, workerId: null }); renderDistPartsTable(); };
+    }
+
+    function renderDistPartsTable() {
+    const dist = productionCurrentDist;
+    const tbody = document.getElementById('distPartsBody');
+    tbody.innerHTML = dist.parts.map((part, idx) => `
+        <tr>
+            <td>${part.type === 'color' ? '🎨 لون' : '🔗 وصلة'}</td>
+            <td><input type="text" value="${part.name || ''}" data-idx="${idx}" data-field="name" style="width:100px;"></td>
+            <td><input type="text" value="${part.model || dist.model}" data-idx="${idx}" data-field="model" style="width:100px;"></td>
+            <td><input type="number" value="${part.price || dist.price}" data-idx="${idx}" data-field="price" step="100" style="width:100px;"></td>
+            <td><input type="number" value="${part.quantity || 1}" data-idx="${idx}" data-field="quantity" min="1" style="width:80px;"></td>
+            <td>
+                <select data-idx="${idx}" data-field="workerId">
+                    <option value="">-- اختر عامل --</option>
+                    ${productionWorkers.map(w => `<option value="${w.id}" ${part.workerId === w.id ? 'selected' : ''}>${w.name}</option>`).join('')}
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-warning save-part-btn" data-idx="${idx}">✏️ حفظ</button>
+                <button class="btn btn-sm btn-danger remove-part" data-idx="${idx}">🗑️ حذف</button>
+            </td>
+        </tr>
+    `).join('');
+
+    // حدث زر "حفظ"
+    tbody.querySelectorAll('.save-part-btn').forEach(btn => {
+        btn.onclick = function() {
+            const idx = this.dataset.idx;
+            const row = this.closest('tr');
+            const nameInput = row.querySelector('[data-field="name"]');
+            const modelInput = row.querySelector('[data-field="model"]');
+            const priceInput = row.querySelector('[data-field="price"]');
+            const quantityInput = row.querySelector('[data-field="quantity"]');
+            const workerSelect = row.querySelector('[data-field="workerId"]');
+
+            const part = dist.parts[idx];
+            const oldWorkerId = part.workerId;
+
+            part.name = nameInput.value.trim();
+            part.model = modelInput.value.trim() || dist.model;
+            part.price = parseFloat(priceInput.value) || 0;
+            part.quantity = parseInt(quantityInput.value) || 1;
+            part.workerId = workerSelect.value ? parseInt(workerSelect.value) : null;
+
+            if (oldWorkerId !== part.workerId) {
+                part.completed = false;
+                part.taskId = undefined;
+            }
+
+            showToast('تم تحديث الجزء. اضغط "حفظ التوزيع" لتطبيق التغييرات على المهام.', 'info');
+        };
+    });
+
+    // حدث زر "حذف"
+    tbody.querySelectorAll('.remove-part').forEach(btn => {
+        btn.onclick = function() {
+            const idx = this.dataset.idx;
+            if (confirm('هل أنت متأكد من حذف هذا الجزء؟ سيتم حذف المهمة المرتبطة به عند حفظ التوزيع.')) {
+                dist.parts.splice(idx, 1);
+                renderDistPartsTable();
+            }
+        };
+    });
+
+    // تحديث مباشر عند تغيير القيم
+    tbody.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('change', function() {
+            const idx = this.dataset.idx;
+            const field = this.dataset.field;
+            let value = this.value;
+            if (field === 'price' || field === 'quantity') value = parseFloat(value) || 0;
+            if (field === 'workerId') value = value ? parseInt(value) : null;
+            dist.parts[idx][field] = value;
+
+            if (field === 'workerId') {
+                dist.parts[idx].completed = false;
+                dist.parts[idx].taskId = undefined;
+            }
+        });
+    });
+}
+
+    function saveDistribution() {
+    const dist = productionCurrentDist;
+    if (!dist.model || !dist.phaseName) return;
+
+    // التحقق من الكميات
+    const totalQty = dist.parts.reduce((sum, p) => sum + (p.quantity || 0), 0);
+    const originalQty = parseFloat(document.getElementById('productionTaskQuantity').value) || 0;
+    if (totalQty > originalQty) {
+        showToast(`⚠️ مجموع الكميات (${totalQty}) يتجاوز الكمية الأصلية (${originalQty})`, 'warning');
+    }
+
+    const partsWithoutWorker = dist.parts.filter(p => !p.workerId);
+    if (partsWithoutWorker.length > 0) {
+        if (!confirm(`هناك ${partsWithoutWorker.length} جزء بدون عامل. هل تريد المتابعة؟`)) return;
+    }
+
+    const oldDist = productionModelsProgress[dist.model]?.distributions?.[dist.phaseName];
+    const oldParts = oldDist ? oldDist.parts : [];
+
+    const oldPartsMap = new Map();
+    oldParts.forEach(part => {
+        const key = part.taskId ? `task_${part.taskId}` : `${part.type}_${part.name}`;
+        oldPartsMap.set(key, part);
+    });
+
+    dist.parts.forEach(newPart => {
+        let oldPart = null;
+        if (newPart.taskId) {
+            oldPart = oldPartsMap.get(`task_${newPart.taskId}`);
+        }
+        if (!oldPart) {
+            oldPart = oldPartsMap.get(`${newPart.type}_${newPart.name}`);
+        }
+
+        if (oldPart && oldPart.taskId) {
+            const oldWorker = productionWorkers.find(w => w.id === oldPart.workerId);
+            const newWorker = productionWorkers.find(w => w.id === newPart.workerId);
+
+            if (oldWorker && newWorker && oldWorker.id === newWorker.id) {
+                const task = oldWorker.tasks.find(t => t.id === oldPart.taskId);
+                if (task) {
+                    task.phaseId = dist.phaseId;
+                    task.phaseName = `${dist.phaseName} (${newPart.type === 'color' ? 'لون' : 'وصلة'} ${newPart.name})`;
+                    task.model = newPart.model || dist.model;
+                    task.quantity = newPart.quantity;
+                    task.pricePerUnit = newPart.price;
+                    task.total = newPart.quantity * newPart.price;
+                    task.timestamp = Date.now();
+                    newPart.taskId = oldPart.taskId;
+                    newPart.completed = true;
+                }
+            } else {
+                if (oldWorker) {
+                    oldWorker.tasks = oldWorker.tasks.filter(t => t.id !== oldPart.taskId);
+                }
+                if (newWorker) {
+                    createNewTaskForPart(newPart);
+                } else {
+                    newPart.taskId = undefined;
+                    newPart.completed = false;
+                }
+            }
+        } else {
+            createNewTaskForPart(newPart);
+        }
+    });
+
+    const newPartsKeys = new Set(dist.parts.map(p => p.taskId ? `task_${p.taskId}` : `${p.type}_${p.name}`));
+    for (let [key, oldPart] of oldPartsMap) {
+        if (!newPartsKeys.has(key) && oldPart.taskId) {
+            const worker = productionWorkers.find(w => w.id === oldPart.workerId);
+            if (worker) {
+                worker.tasks = worker.tasks.filter(t => t.id !== oldPart.taskId);
+            }
+        }
+    }
+
+    function createNewTaskForPart(part) {
+        if (!part.workerId || part.quantity <= 0) {
+            part.taskId = undefined;
+            part.completed = false;
+            return;
+        }
+        const worker = productionWorkers.find(w => w.id === part.workerId);
+        if (!worker) return;
+
+        const now = new Date();
+        const taskId = Date.now() + Math.floor(Math.random() * 10000);
+        const usdRate = parseFloat(document.getElementById('usdRate').value) || 11800;
+
+        const task = {
+            id: taskId,
+            phaseId: dist.phaseId,
+            phaseName: `${dist.phaseName} (${part.type === 'color' ? 'لون' : 'وصلة'} ${part.name})`,
+            model: part.model || dist.model,
+            quantity: part.quantity,
+            pricePerUnit: part.price,
+            total: part.quantity * part.price,
+            priceUSD: part.price / usdRate,
+            totalUSD: (part.quantity * part.price) / usdRate,
+            date: now.toISOString().slice(0, 10),
+            dayName: ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'][now.getDay()],
+            timestamp: now.getTime(),
+            isDistributed: true,
+            distributionType: part.type,
+            distributionKey: part.name,
+            distributionParent: dist.phaseName
+        };
+        worker.tasks.unshift(task);
+        part.taskId = taskId;
+        part.completed = true;
+    }
+
+    if (!productionModelsProgress[dist.model]) {
+        productionModelsProgress[dist.model] = {
+            completedPhases: [],
+            manualCompleted: false,
+            tasks: [],
+            status: 'pending',
+            distributions: {}
+        };
+    }
+    if (!productionModelsProgress[dist.model].distributions) {
+        productionModelsProgress[dist.model].distributions = {};
+    }
+
+    const finalParts = dist.parts.map(part => ({
+        ...part,
+        taskId: part.completed ? part.taskId : undefined
+    }));
+
+    productionModelsProgress[dist.model].distributions[dist.phaseName] = {
+        parts: finalParts,
+        phaseId: dist.phaseId,
+        phasePrice: dist.price
+    };
+
+    if (!productionModelsProgress[dist.model].completedPhases.includes(dist.phaseName)) {
+        productionModelsProgress[dist.model].completedPhases.push(dist.phaseName);
+    }
+
+    updateProductionModelStatus(dist.model);
+    saveData();
+    refreshProductionUI();
+    closeModal('productionDistributionModal');
+    showToast('تم حفظ التوزيع وتحديث المهام', 'success');
+}
+   
+   function renderDistributionModalForWorker(workerId) {
+    const dist = productionCurrentDist;
+    document.getElementById('productionDistModalTitle').innerText = `توزيع مهمة: ${dist.phaseName} - موديل ${dist.model}`;
+    let html = `
+        <div style="margin-bottom:15px;"><label>سعر المهمة الأصلي: ${formatNumber(dist.price)} ل.س</label></div>
+        <table class="distribution-table">
+            <thead><tr><th>النوع</th><th>الاسم</th><th>الموديل</th><th>السعر</th><th>الكمية</th><th>العامل</th><th>إجراءات</th></tr></thead>
+            <tbody id="distPartsBody"></tbody>
+        </table>
+        <div style="margin-top:10px;">
+            <button id="addColorPartBtn" class="btn btn-sm btn-primary">+ إضافة لون</button>
+            <button id="addLinkPartBtn" class="btn btn-sm btn-primary">+ إضافة وصلة</button>
+        </div>
+    `;
+    document.getElementById('productionDistModalContent').innerHTML = html;
+    
+    function refreshPartsTable() {
+        const tbody = document.getElementById('distPartsBody');
+        tbody.innerHTML = dist.parts.map((part, idx) => {
+            const isOwner = (part.workerId === workerId);
+            if (isOwner) {
+                return `
+                    <tr data-idx="${idx}" style="background: #e3f2fd;">
+                        <td>${part.type === 'color' ? '🎨 لون' : '🔗 وصلة'}</td>
+                        <td><input type="text" class="part-name" value="${part.name || ''}" style="width:100px;"></td>
+                        <td><input type="text" class="part-model" value="${part.model || dist.model}" style="width:100px;"></td>
+                        <td><input type="number" class="part-price" value="${part.price || dist.price}" step="100" style="width:100px;"></td>
+                        <td><input type="number" class="part-quantity" value="${part.quantity || 1}" min="1" style="width:80px;"></td>
+                        <td><select class="part-worker" disabled><option>${productionWorkers.find(w => w.id === part.workerId)?.name || 'أنت'}</option></select></td>
+                        <td><button class="btn btn-sm btn-success save-part-now" data-idx="${idx}">💾 حفظ</button> <button class="btn btn-sm btn-danger delete-part" data-idx="${idx}">🗑️ حذف</button></td>
+                    </tr>
+                `;
+            } else {
+                return `
+                    <tr data-idx="${idx}">
+                        <td>${part.type === 'color' ? '🎨 لون' : '🔗 وصلة'}</td>
+                        <td>${part.name || '-'}</td>
+                        <td>${part.model || dist.model}</td>
+                        <td>${formatNumber(part.price || dist.price)}</td>
+                        <td>${part.quantity || 1}</td>
+                        <td>${productionWorkers.find(w => w.id === part.workerId)?.name || 'غير معين'}</td>
+                        <td><span style="color:#888;">🔒 للقراءة</span></td>
+                    </tr>
+                `;
+            }
+        }).join('');
+    }
+    refreshPartsTable();
+    
+    document.getElementById('distPartsBody').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const idx = btn.dataset.idx;
+        if (idx === undefined) return;
+        const part = dist.parts[idx];
+        if (part.workerId !== workerId) { showToast('لا يمكنك تعديل أو حذف هذا الجزء', 'error'); return; }
+        
+        if (btn.classList.contains('save-part-now')) {
+            const row = btn.closest('tr');
+            const newData = {
+                name: row.querySelector('.part-name').value,
+                model: row.querySelector('.part-model').value,
+                price: parseFloat(row.querySelector('.part-price').value) || dist.price,
+                quantity: parseInt(row.querySelector('.part-quantity').value) || 1,
+            };
+            const request = {
+                id: 'dist-req-' + Date.now() + '-' + Math.random().toString(36),
+                type: 'distribution_edit',
+                workerId, phaseId: dist.phaseId, phaseName: dist.phaseName, model: dist.model, partIndex: idx,
+                originalData: { name: part.name, model: part.model, price: part.price, quantity: part.quantity },
+                newData, reason: `طلب تعديل جزء ${part.type} من العامل`,
+                status: 'pending', createdAt: new Date().toISOString()
+            };
+            pendingEditRequests.push(request); saveData();
+            showToast('تم إرسال طلب التعديل إلى المدير', 'success'); updatePendingRequestsBadge();
+        } else if (btn.classList.contains('delete-part')) {
+            const request = {
+                id: 'dist-req-' + Date.now() + '-' + Math.random().toString(36),
+                type: 'distribution_delete',
+                workerId, phaseId: dist.phaseId, phaseName: dist.phaseName, model: dist.model, partIndex: idx,
+                partData: { name: part.name, model: part.model, price: part.price, quantity: part.quantity, type: part.type, workerId: part.workerId },
+                reason: `طلب حذف جزء ${part.type} من العامل`,
+                status: 'pending', createdAt: new Date().toISOString()
+            };
+            pendingEditRequests.push(request); saveData();
+            showToast('تم إرسال طلب الحذف إلى المدير', 'success'); updatePendingRequestsBadge();
+            dist.parts.splice(idx, 1); refreshPartsTable();
+        }
+    });
+    
+    document.getElementById('addColorPartBtn').onclick = () => {
+        const newPart = { type: 'color', name: 'لون جديد', model: dist.model, price: dist.price, quantity: 1, workerId };
+        const request = { id: 'dist-req-' + Date.now() + '-' + Math.random().toString(36), type: 'distribution_add', workerId, phaseId: dist.phaseId, phaseName: dist.phaseName, model: dist.model, newPartData: newPart, reason: `طلب إضافة لون جديد من العامل`, status: 'pending', createdAt: new Date().toISOString() };
+        pendingEditRequests.push(request); saveData(); showToast('تم إرسال طلب إضافة لون إلى المدير', 'success'); updatePendingRequestsBadge();
+        dist.parts.push(newPart); refreshPartsTable();
+    };
+    document.getElementById('addLinkPartBtn').onclick = () => {
+        const newPart = { type: 'link', name: 'وصلة جديدة', model: dist.model, price: dist.price, quantity: 1, workerId };
+        const request = { id: 'dist-req-' + Date.now() + '-' + Math.random().toString(36), type: 'distribution_add', workerId, phaseId: dist.phaseId, phaseName: dist.phaseName, model: dist.model, newPartData: newPart, reason: `طلب إضافة وصلة جديدة من العامل`, status: 'pending', createdAt: new Date().toISOString() };
+        pendingEditRequests.push(request); saveData(); showToast('تم إرسال طلب إضافة وصلة إلى المدير', 'success'); updatePendingRequestsBadge();
+        dist.parts.push(newPart); refreshPartsTable();
+    };
+    
+    document.getElementById('productionSaveDistributionBtn').style.display = 'inline-block';
+    document.getElementById('productionSaveDistributionBtn').onclick = () => { showToast('تم إرسال جميع التغييرات كطلبات للمدير', 'success'); closeModal('productionDistributionModal'); };
+    document.getElementById('productionCloseDistModalBtn').onclick = () => closeModal('productionDistributionModal');
+}
+
+// ==================== دوال واجهة العامل وطلبات التعديل ====================
+function updatePendingRequestsBadge() {
+    const badge = document.getElementById('pendingRequestsCount');
+    if (badge) {
+        const count = pendingEditRequests.filter(r => r.status === 'pending').length;
+        badge.innerText = count;
+        badge.style.display = count > 0 ? 'inline' : 'none';
+    }
+}
+
+function renderPendingRequests() {
+    const container = document.getElementById('pendingRequestsList');
+    if (!container) return;
+    const pending = pendingEditRequests.filter(r => r.status === 'pending');
+    if (pending.length === 0) { container.innerHTML = '<p>لا توجد طلبات معلقة حالياً.</p>'; return; }
+    let html = '';
+    pending.forEach(req => {
+        const worker = productionWorkers.find(w => w.id === req.workerId);
+        if (!worker) return;
+        if (req.type === 'distribution_add') {
+            html += `<div class="phase-item"><div><strong>${worker.name}</strong> - طلب إضافة جزء توزيع<br>الموديل: ${req.model} - ${req.phaseName}<br>إضافة: ${req.newPartData.type === 'color' ? '🎨 لون' : '🔗 وصلة'} - ${req.newPartData.name}<br>الكمية: ${req.newPartData.quantity} | السعر: ${formatNumber(req.newPartData.price)}<br><small>السبب: ${req.reason}</small><br><small>تاريخ: ${req.createdAt.slice(0,10)}</small></div><div><button class="btn-sm btn-success handle-request" data-req-id="${req.id}">معالجة</button></div></div>`;
+        } else if (req.type === 'distribution_edit') {
+            html += `<div class="phase-item"><div><strong>${worker.name}</strong> - طلب تعديل جزء توزيع<br>الموديل: ${req.model} - ${req.phaseName}<br>الجزء: ${req.originalData.name} → ${req.newData.name}<br>الموديل الفرعي: ${req.originalData.model} → ${req.newData.model}<br>الكمية: ${req.originalData.quantity} → ${req.newData.quantity}<br>السعر: ${formatNumber(req.originalData.price)} → ${formatNumber(req.newData.price)}<br><small>السبب: ${req.reason}</small><br><small>تاريخ: ${req.createdAt.slice(0,10)}</small></div><div><button class="btn-sm btn-success handle-request" data-req-id="${req.id}">معالجة</button></div></div>`;
+        } else if (req.type === 'distribution_delete') {
+            html += `<div class="phase-item"><div><strong>${worker.name}</strong> - طلب حذف جزء توزيع<br>الموديل: ${req.model} - ${req.phaseName}<br>حذف: ${req.partData.type === 'color' ? '🎨 لون' : '🔗 وصلة'} - ${req.partData.name}<br>الكمية: ${req.partData.quantity} | السعر: ${formatNumber(req.partData.price)}<br><small>السبب: ${req.reason}</small><br><small>تاريخ: ${req.createdAt.slice(0,10)}</small></div><div><button class="btn-sm btn-success handle-request" data-req-id="${req.id}">معالجة</button></div></div>`;
+        } else {
+            const task = worker.tasks.find(t => t.id === req.taskId);
+            if (!task) return;
+            html += `<div class="phase-item"><div><strong>${worker.name}</strong> - ${task.phaseName}<br>الموديل: ${req.originalModel} → ${req.newModel}<br>الكمية: ${req.originalQty} → ${req.newQty}<br><small>السبب: ${req.reason}</small><br><small>تاريخ: ${req.createdAt.slice(0,10)}</small></div><div><button class="btn-sm btn-success handle-request" data-req-id="${req.id}">معالجة</button></div></div>`;
+        }
+    });
+    container.innerHTML = html;
+    
+    document.querySelectorAll('.handle-request').forEach(btn => { btn.onclick = () => handleRequest(btn.dataset.reqId); });
+}
+
+function handleRequest(reqId) {
+    const req = pendingEditRequests.find(r => r.id === reqId);
+    if (!req) return;
+    const worker = productionWorkers.find(w => w.id === req.workerId);
+    if (!worker) return;
+    
+    let content = ''; let approveCallback = null;
+    if (req.type === 'distribution_add') {
+        content = `<p><strong>العامل:</strong> ${worker.name}</p><p><strong>الموديل الرئيسي:</strong> ${req.model}</p><p><strong>المهمة:</strong> ${req.phaseName}</p><p><strong>إضافة جزء جديد:</strong> ${req.newPartData.type === 'color' ? 'لون' : 'وصلة'}</p><p><strong>الاسم:</strong> ${req.newPartData.name}</p><p><strong>الموديل الفرعي:</strong> ${req.newPartData.model}</p><p><strong>الكمية:</strong> ${req.newPartData.quantity}</p><p><strong>السعر:</strong> ${formatNumber(req.newPartData.price)} ل.س</p><p><strong>السبب:</strong> ${req.reason}</p>`;
+        approveCallback = () => {
+            const dist = productionModelsProgress[req.model]?.distributions?.[req.phaseName];
+            if (dist) dist.parts.push({...req.newPartData});
+            else {
+                if (!productionModelsProgress[req.model]) productionModelsProgress[req.model] = { completedPhases: [], manualCompleted: false, tasks: [], status: 'pending', distributions: {} };
+                productionModelsProgress[req.model].distributions = productionModelsProgress[req.model].distributions || {};
+                productionModelsProgress[req.model].distributions[req.phaseName] = { parts: [{...req.newPartData}], phaseId: req.phaseId, phasePrice: req.newPartData.price };
+            }
+            req.status = 'approved'; saveData(); refreshProductionUI(); closeModal('handleRequestModal'); showToast('تمت إضافة الجزء بنجاح', 'success'); renderPendingRequests(); updatePendingRequestsBadge();
+        };
+    } else if (req.type === 'distribution_edit') {
+        content = `<p><strong>العامل:</strong> ${worker.name}</p><p><strong>الموديل:</strong> ${req.model} - ${req.phaseName}</p><p><strong>الجزء:</strong> ${req.originalData.name}</p><p><strong>القيم الأصلية:</strong> موديل ${req.originalData.model}، ${req.originalData.quantity} قطعة، ${formatNumber(req.originalData.price)} ل.س</p><p><strong>القيم الجديدة:</strong> موديل ${req.newData.model}، ${req.newData.quantity} قطعة، ${formatNumber(req.newData.price)} ل.س</p><p><strong>السبب:</strong> ${req.reason}</p>`;
+        approveCallback = () => {
+            const dist = productionModelsProgress[req.model]?.distributions?.[req.phaseName];
+            if (dist && dist.parts[req.partIndex]) Object.assign(dist.parts[req.partIndex], req.newData);
+            req.status = 'approved'; saveData(); refreshProductionUI(); closeModal('handleRequestModal'); showToast('تم تعديل الجزء بنجاح', 'success'); renderPendingRequests(); updatePendingRequestsBadge();
+        };
+    } else if (req.type === 'distribution_delete') {
+        content = `<p><strong>العامل:</strong> ${worker.name}</p><p><strong>الموديل:</strong> ${req.model} - ${req.phaseName}</p><p><strong>حذف الجزء:</strong> ${req.partData.type === 'color' ? 'لون' : 'وصلة'} - ${req.partData.name}</p><p><strong>الكمية:</strong> ${req.partData.quantity} | السعر: ${formatNumber(req.partData.price)} ل.س</p><p><strong>السبب:</strong> ${req.reason}</p>`;
+        approveCallback = () => {
+            const dist = productionModelsProgress[req.model]?.distributions?.[req.phaseName];
+            if (dist && dist.parts[req.partIndex]) dist.parts.splice(req.partIndex, 1);
+            req.status = 'approved'; saveData(); refreshProductionUI(); closeModal('handleRequestModal'); showToast('تم حذف الجزء بنجاح', 'success'); renderPendingRequests(); updatePendingRequestsBadge();
+        };
+    } else {
+        const task = worker.tasks.find(t => t.id === req.taskId);
+        if (!task) return;
+        content = `<p><strong>العامل:</strong> ${worker.name}</p><p><strong>المهمة:</strong> ${task.phaseName}</p><p><strong>القيم الأصلية:</strong> موديل ${req.originalModel}، ${req.originalQty} قطعة</p><p><strong>القيم الجديدة:</strong> موديل ${req.newModel}، ${req.newQty} قطعة</p><p><strong>السبب:</strong> ${req.reason}</p>`;
+        approveCallback = () => {
+            task.model = req.newModel; task.quantity = req.newQty; task.total = req.newQty * task.pricePerUnit;
+            if (productionModelsProgress[req.originalModel]) {
+                const mp = productionModelsProgress[req.originalModel];
+                mp.tasks = mp.tasks.filter(tk => tk.timestamp !== task.timestamp);
+                updateProductionModelStatus(req.originalModel);
+            }
+            addProductionPhaseToModelDirect(req.newModel, task.phaseName, req.workerId, req.newQty, task.pricePerUnit);
+            req.status = 'approved'; saveData(); refreshProductionUI(); closeModal('handleRequestModal'); showToast('تمت الموافقة على التعديل', 'success'); renderPendingRequests(); updatePendingRequestsBadge();
+        };
+    }
+    
+    document.getElementById('requestDetailsContent').innerHTML = content;
+    document.getElementById('approveRequestBtn').onclick = approveCallback;
+    document.getElementById('rejectRequestBtn').onclick = () => {
+        const reason = document.getElementById('rejectReasonInput').value;
+        req.status = 'rejected'; req.adminResponse = reason || 'بدون سبب';
+        saveData(); refreshProductionUI(); closeModal('handleRequestModal'); showToast('تم رفض الطلب', 'warning'); renderPendingRequests(); updatePendingRequestsBadge();
+    };
+    openModal('handleRequestModal');
+}
+
+function showWorkerDashboard() {
+    const worker = productionWorkers.find(w => w.id === currentUser.id) || fixedWorkers.find(w => w.id === currentUser.id);
+    if (!worker) return;
+    document.getElementById('workerNameDisplay').innerHTML = `<i class="fas fa-user"></i> ${worker.name}`;
+    
+    const end = new Date(); const start = new Date(); start.setDate(end.getDate() - 7);
+    const startStr = start.toISOString().slice(0,10); const endStr = end.toISOString().slice(0,10);
+    const tasks = worker.tasks.filter(t => t.date >= startStr && t.date <= endStr);
+    const workDays = new Set(tasks.map(t => t.date)).size;
+    const absences = (worker.absenceRecords || []).filter(r => r.date >= startStr && r.date <= endStr).length;
+    const lateMins = (worker.latenessRecords || []).filter(r => r.date >= startStr && r.date <= endStr).reduce((s, r) => s + r.minutes, 0);
+    const overtimeMins = (worker.overtimeRecords || []).filter(r => r.date >= startStr && r.date <= endStr).reduce((s, r) => s + r.minutes, 0);
+    const totalSalary = tasks.reduce((s, t) => s + t.total, 0);
+    
+    document.getElementById('wdWorkDays').innerText = workDays;
+    document.getElementById('wdAbsences').innerText = absences;
+    document.getElementById('wdLateMins').innerText = lateMins;
+    document.getElementById('wdOvertimeMins').innerText = overtimeMins;
+    document.getElementById('wdTotalSalary').innerHTML = formatNumber(totalSalary) + ' ل.س';
+    
+    const phaseSelect = document.getElementById('wdTaskPhase');
+    phaseSelect.innerHTML = productionPhases.map(p => `<option value="${p.id}">${p.name} (${p.price} ل.س)</option>`).join('');
+    
+    let tasksHtml = '';
+    worker.tasks.slice(0, 10).forEach(t => {
+        tasksHtml += `<div class="phase-item"><div><strong>${t.phaseName}</strong> (${t.model})<br>${t.quantity} قطعة × ${formatNumber(t.pricePerUnit)} = ${formatNumber(t.total)} ل.س<br><small>${t.date}</small></div><div><button class="btn-sm btn-warning request-edit-btn" data-task-id="${t.id}">طلب تعديل</button></div></div>`;
+    });
+    document.getElementById('wdTasksList').innerHTML = tasksHtml || '<p>لا توجد مهام مسجلة بعد.</p>';
+    
+    document.querySelectorAll('.request-edit-btn').forEach(btn => { btn.onclick = () => {
+        const taskId = btn.dataset.taskId; const task = worker.tasks.find(t => t.id === taskId);
+        if (!task) return;
+        currentWorkerForEditRequest = { workerId: worker.id, task };
+        document.getElementById('reqEditModel').value = task.model;
+        document.getElementById('reqEditQuantity').value = task.quantity;
+        document.getElementById('reqEditReason').value = '';
+        openModal('workerEditRequestModal');
+    }; });
+    
+    document.getElementById('wdCheckinBtn').onclick = () => addProductionAttendance(worker.id, 'دخول');
+    document.getElementById('wdCheckoutBtn').onclick = () => addProductionAttendance(worker.id, 'خروج');
+    document.getElementById('wdSubmitTaskBtn').onclick = () => {
+        const phaseId = parseInt(phaseSelect.value); const model = document.getElementById('wdTaskModel').value.trim();
+        const qty = parseFloat(document.getElementById('wdTaskQuantity').value);
+        const phase = productionPhases.find(p => p.id === phaseId);
+        if (!model || !qty || qty <= 0) { showToast('أدخل بيانات صحيحة', 'error'); return; }
+        if (addProductionTaskWithConfirm(worker.id, phaseId, model, qty, phase.price)) {
+            document.getElementById('wdTaskModel').value = ''; document.getElementById('wdTaskQuantity').value = '';
+            showWorkerDashboard();
+        }
+    };
+    document.getElementById('wdDistributeTaskBtn').onclick = () => {
+        const phaseId = parseInt(phaseSelect.value); const phase = productionPhases.find(p => p.id === phaseId);
+        const model = document.getElementById('wdTaskModel').value.trim();
+        if (!model) { showToast('أدخل رقم الموديل أولاً', 'error'); return; }
+        if (!phase) { showToast('اختر مهمة', 'error'); return; }
+        openDistributionModalForWorker(phaseId, phase.name, phase.price, model, worker.id);
+    };
+    document.getElementById('workerLogoutBtn').onclick = () => location.reload();
+}
+
+// ==================== دوال تحديث الواجهات ====================
+function refreshAllUI() { refreshProductionUI(); refreshFixedUI(); }
+
+function refreshProductionUI() {
+    const selects = ['productionAttendanceWorkerSelect','productionWorkerForTask','productionRemoveWorkerSelect'];
+    selects.forEach(id => { const sel = document.getElementById(id); if(sel) sel.innerHTML = productionWorkers.map(w => `<option value="${w.id}">${w.name}</option>`).join(''); });
+    const phaseSel = document.getElementById('productionPhaseForTask'); if(phaseSel) phaseSel.innerHTML = productionPhases.map(p => `<option value="${p.id}">${p.name} (${p.price} ل.س)</option>`).join('');
+    const phasesList = document.getElementById('productionPhasesList'); if(phasesList) phasesList.innerHTML = productionPhases.map(p => `<tr><td>${p.name}</td><td>${p.price}</td><td><button class="btn btn-sm btn-warning" onclick="window.editProductionPhase(${p.id})">تعديل</button> <button class="btn btn-sm btn-danger" onclick="window.deleteProductionPhase(${p.id})">حذف</button></td></tr>`).join('');
+    renderProductionCompletionGroups(); updateProductionWorkersTable(); updateProductionModelsTable(); updateProductionRecentModels(); updateProductionPriceUSDDisplay();
+    const aw = document.getElementById('productionAttendanceWorkerSelect')?.value; if(aw) renderProductionAttendanceLogs(parseInt(aw));
+    const pid = document.getElementById('productionPhaseForTask')?.value; if(pid) { const p = productionPhases.find(p=>p.id==pid); if(p) document.getElementById('productionTaskPrice').value = p.price; }
+}
+
+function refreshFixedUI() {
+    renderFixedWorkerDropdown(); updateFixedSalaryTable();
+    const actions = document.getElementById('fixedSelectedWorkerActions');
+    if(fixedSelectedWorkerId) { const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(w) { document.getElementById('fixedSelectedWorkerName').textContent = w.name; actions.style.display = 'flex'; } else { fixedSelectedWorkerId = null; actions.style.display = 'none'; } }
+    else { document.getElementById('fixedSelectedWorkerName').textContent = '-- اختر عاملاً --'; actions.style.display = 'none'; }
+    if(fixedSelectedWorkerId) renderFixedAttendanceLogs();
+}
+
+// دوال مساعدة لواجهة الإنتاج
+function renderProductionAttendanceLogs(workerId) {
+    const w = productionWorkers.find(w=>w.id===workerId); if(!w) return;
+    const start = document.getElementById('productionAttFilterStart')?.value, end = document.getElementById('productionAttFilterEnd')?.value;
+    let logs = w.attendanceLogs.filter(l => (!start || l.date >= start) && (!end || l.date <= end));
+    const cont = document.getElementById('productionAttendanceLogs'); if(cont) cont.innerHTML = logs.length ? `<strong>سجل ${w.name}</strong>` + logs.map(l => `<div class="log-item"><span>${l.type} - ${l.datetime}</span><button class="btn btn-sm btn-danger" onclick="window.deleteProductionAttendance(${w.id}, '${l.id}')">🗑️</button></div>`).join('') : '<div class="badge">لا توجد سجلات</div>';
+}
+
+function renderProductionCompletionGroups() {
+    const cont = document.getElementById('productionCompletionGroupsList'); if(!cont) return;
+    if(!productionCompletionGroups.length) { cont.innerHTML = '<div class="badge">لا توجد مجموعات</div>'; return; }
+    cont.innerHTML = productionCompletionGroups.map((g,i) => `<div class="completion-group"><strong>${g.name || `مجموعة ${i+1}`}</strong><div class="group-phases">${g.phases.map(p => `<span class="group-phase-badge">${p}</span>`).join('')}</div><div><button class="btn btn-sm btn-info" onclick="window.editProductionGroup(${i})">تعديل</button> <button class="btn btn-sm btn-danger" onclick="window.deleteProductionGroup(${i})">حذف</button></div></div>`).join('');
+}
+
+function updateProductionWorkersTable() {
+    const start = document.getElementById('productionGlobalStartDate')?.value || new Date().toISOString().slice(0,10);
+    const end = document.getElementById('productionGlobalEndDate')?.value || new Date().toISOString().slice(0,10);
+    const usdRate = parseFloat(document.getElementById('usdRate').value) || 11800;
+    const searchTerm = document.getElementById('productionSearchInput')?.value.toLowerCase() || '';
+    const searchType = document.getElementById('productionSearchType')?.value || 'all';
+    let filtered = productionWorkers.filter(w => {
+        if(!searchTerm) return true;
+        if(searchType==='worker') return w.name.toLowerCase().includes(searchTerm);
+        if(searchType==='phase') return w.tasks.some(t=>t.phaseName.toLowerCase().includes(searchTerm));
+        if(searchType==='model') return w.tasks.some(t=>t.model.toLowerCase().includes(searchTerm));
+        return w.name.toLowerCase().includes(searchTerm) || w.tasks.some(t=>t.phaseName.toLowerCase().includes(searchTerm) || t.model.toLowerCase().includes(searchTerm));
+    });
+    const tbody = document.getElementById('productionWorkersMainList'); if(!tbody) return;
+    tbody.innerHTML = filtered.map((w,i) => {
+        const tasks = w.tasks.filter(t=>t.date>=start && t.date<=end);
+        const salary = tasks.reduce((s,t)=>s+t.total,0);
+        const late = (w.latenessRecords||[]).filter(l=>l.date>=start&&l.date<=end).reduce((s,l)=>s+l.minutes,0);
+        const abs = (w.absenceRecords||[]).filter(a=>a.date>=start&&a.date<=end).length;
+        const zkInfo = w.zkUID ? `رقم البصمة: ${w.zkUID}` : 'لم يحدد';
+        let tasksHtml = tasks.slice(0,3).map(t=>`<div>📌 ${t.phaseName} (${t.model}) - ${t.quantity}</div>`).join('');
+        if(tasks.length>3) tasksHtml += '<div>...</div>';
+        return `<tr><td>${i+1}</td><td><strong>${w.name}</strong><br><small>${convertTo12Hour(w.shiftStart)} - ${convertTo12Hour(w.shiftEnd)}</small><br><small style="color:#2c7da0;">${zkInfo}</small></td><td>${late>0?`<span class="lateness-badge">⏰ ${late} د</span>`:''} ${abs>0?`<span class="absent-badge">📋 ${abs} يوم</span>`:''}</td><td style="text-align:right;">${tasksHtml || '-'}</td><td>${formatNumber(salary)} ل.س<br><small>≈ ${(salary/usdRate).toFixed(2)} $</small></td><td><button class="btn btn-sm btn-info" onclick="window.showProductionWorkerDetails(${w.id})">تفاصيل</button><button class="btn btn-sm btn-success" onclick="window.openProductionPaymentModal(${w.id})">دفعة</button><button class="btn btn-sm btn-warning" onclick="window.editProductionWorkerZK(${w.id})">🔢 بصمة</button></td></tr>`;
+    }).join('');
+}
+
+function updateProductionModelsTable() {
+    const tbody = document.getElementById('productionModelsList'); if(!tbody) return;
+    const models = Object.entries(productionModelsProgress).map(([model,data]) => ({ model, ...data }));
+    tbody.innerHTML = models.map((m,i) => {
+        const statusHtml = m.status==='completed' ? '<span class="status-completed">✅ منتهي</span>' : '<span class="status-incomplete">⏳ قيد التنفيذ</span>';
+        const phasesText = (m.completedPhases||[]).join(' • ') || '-';
+        const totalQty = (m.tasks||[]).reduce((s,t)=>s+(t.quantity||0),0);
+        return `<tr><td>${i+1}</td><td>${m.model}</td><td>${phasesText}</td><td>${totalQty}</td><td>${statusHtml}</td><td><button class="btn btn-sm btn-info" onclick="window.showProductionModelDetails('${m.model}')">تفاصيل</button></td></tr>`;
+    }).join('');
+}
+
+function updateProductionRecentModels() {
+    const cont = document.getElementById('productionModelRecent');
+    if(cont) cont.innerHTML = productionLastUsedModels.length ? '<span>🕒 آخر المستخدمة:</span> ' + productionLastUsedModels.slice(0,5).map(m => `<span class="badge" style="cursor:pointer;" onclick="document.getElementById('productionTaskModel').value='${m}'">${m}</span>`).join(' ') : '';
+}
+
+function updateProductionPriceUSDDisplay() {
+    const priceInput = document.getElementById('productionTaskPrice');
+    const usdSpan = document.getElementById('productionTaskPriceUSD');
+    if(priceInput && usdSpan) { const usdRate = parseFloat(document.getElementById('usdRate').value) || 11800; const price = parseFloat(priceInput.value) || 0; usdSpan.innerText = `≈ ${(price/usdRate).toFixed(2)} $`; }
+}
+
+window.editProductionPhase = function(id) { const p = productionPhases.find(p=>p.id===id); if(!p) return; const newPrice = prompt('السعر الجديد (ل.س):', p.price); if(newPrice !== null) { p.price = parseFloat(newPrice)||0; saveData(); refreshProductionUI(); showToast('تم تعديل السعر'); } };
+window.deleteProductionPhase = function(id) { if(confirm('حذف المهمة؟')) { productionPhases = productionPhases.filter(p=>p.id!==id); saveData(); refreshProductionUI(); showToast('تم الحذف', 'warning'); } };
+window.deleteProductionAttendance = function(workerId, logId) { const w = productionWorkers.find(w=>w.id===workerId); if(w) { w.attendanceLogs = w.attendanceLogs.filter(l=>l.id!=logId); saveData(); renderProductionAttendanceLogs(workerId); showToast('تم الحذف', 'warning'); } };
+window.editProductionGroup = function(index) { productionCurrentGroupIndex = index; const g = productionCompletionGroups[index]; productionTempGroupPhases = [...g.phases]; document.getElementById('productionEditGroupName').value = g.name || ''; renderProductionTempGroupPhases(); openModal('productionEditGroupModal'); };
+window.deleteProductionGroup = function(index) { if(confirm('حذف المجموعة؟')) { productionCompletionGroups.splice(index,1); saveData(); renderProductionCompletionGroups(); showToast('تم الحذف', 'warning'); } };
+function renderProductionTempGroupPhases() { const cont = document.getElementById('productionGroupPhasesList'); cont.innerHTML = productionTempGroupPhases.map((p,i) => `<span class="group-phase-badge" style="background:#e67e22;">${p} <button class="btn-sm btn-danger" style="padding:0 5px;" onclick="window.removeProductionTempPhase(${i})">✕</button></span>`).join(''); }
+window.removeProductionTempPhase = function(idx) { productionTempGroupPhases.splice(idx,1); renderProductionTempGroupPhases(); };
+window.showProductionWorkerDetails = function(id) { productionCurrentWorkerId = id; const w = productionWorkers.find(w=>w.id===id); if(!w) return; document.getElementById('productionWorkerModalTitle').innerHTML = `تفاصيل: ${w.name}`; const today = new Date(); const monthAgo = new Date(); monthAgo.setDate(today.getDate()-30); document.getElementById('productionWorkerModalStart').value = monthAgo.toISOString().slice(0,10); document.getElementById('productionWorkerModalEnd').value = today.toISOString().slice(0,10); renderProductionWorkerDetails(w); openModal('productionWorkerDetailsModal'); };
+window.openProductionPaymentModal = function(workerId) { productionCurrentWorkerId = workerId; const worker = productionWorkers.find(w => w.id === workerId); if (!worker) return; const start = document.getElementById('productionGlobalStartDate').value; const end = document.getElementById('productionGlobalEndDate').value; const tasks = worker.tasks.filter(t => t.date >= start && t.date <= end); const totalSalary = tasks.reduce((sum, t) => sum + t.total, 0); const totalPayments = (worker.payments || []).filter(p => p.date >= start && p.date <= end).reduce((sum, p) => sum + p.amount, 0); const adjustments = (worker.adjustments || []).filter(a => a.date >= start && a.date <= end).reduce((sum, a) => sum + (a.type === 'bonus' ? a.amount : -a.amount), 0); const balance = totalSalary - totalPayments + adjustments; document.getElementById('productionPaymentAmount').value = balance > 0 ? Math.round(balance) : ''; openModal('productionPaymentModal'); };
+window.editProductionWorkerZK = function(workerId) { const w = productionWorkers.find(w=>w.id===workerId); if(!w) return; const newZk = prompt(`رقم البصمة للعامل ${w.name}:`, w.zkUID || ''); if(newZk !== null) { w.zkUID = parseInt(newZk) || null; saveData(); refreshProductionUI(); showToast('تم تحديث رقم البصمة'); } };
+
+function renderProductionWorkerDetails(w) {
+    const start = document.getElementById('productionWorkerModalStart').value;
+    const end = document.getElementById('productionWorkerModalEnd').value;
+    const tasks = w.tasks.filter(t => t.date >= start && t.date <= end);
+    let html = '<h4>📋 المهام المنجزة</h4>';
+    if (tasks.length === 0) html += '<p>لا توجد مهام في هذه الفترة</p>';
+    else tasks.forEach(t => { html += `<div class="phase-item"><div class="phase-item-content"><div><strong>${t.phaseName}</strong> (موديل: ${t.model})</div><div>العدد: ${t.quantity} | سعر الوحدة: ${formatNumber(t.pricePerUnit)} ل.س | الإجمالي: ${formatNumber(t.total)} ل.س</div><div style="font-size:11px;">التاريخ: ${t.date} (${t.dayName || ''})</div></div><div class="phase-item-actions"><button class="btn-sm btn-warning edit-task-btn" data-task-id="${t.id}" data-worker-id="${w.id}" data-phase-id="${t.phaseId}" data-model="${t.model}" data-quantity="${t.quantity}" data-price="${t.pricePerUnit}">تعديل</button><button class="btn-sm btn-danger delete-task-btn" data-task-id="${t.id}" data-worker-id="${w.id}">حذف</button></div></div>`; });
+    const payments = (w.payments || []).filter(p => p.date >= start && p.date <= end);
+    html += '<h4>💰 المدفوعات</h4>';
+    if (payments.length === 0) html += '<p>لا توجد مدفوعات في هذه الفترة</p>';
+    else payments.forEach(p => { html += `<div class="log-item"><span>${p.date} - ${p.method}: ${formatNumber(p.amount)} ل.س</span></div>`; });
+    const adjustments = (w.adjustments || []).filter(a => a.date >= start && a.date <= end);
+    html += '<h4>🔧 التعديلات (خصومات/مكافآت)</h4>';
+    if (adjustments.length === 0) html += '<p>لا توجد تعديلات في هذه الفترة</p>';
+    else adjustments.forEach(a => { html += `<div class="log-item">${a.date} - ${a.reason} : ${a.type === 'bonus' ? '+' : '-'}${formatNumber(a.amount)} ل.س</div>`; });
+    document.getElementById('productionWorkerDetailsContent').innerHTML = html;
+    const totalSalary = tasks.reduce((s, t) => s + t.total, 0);
+    const totalPayments = payments.reduce((s, p) => s + p.amount, 0);
+    const netAdjustments = adjustments.reduce((s, a) => s + (a.type === 'bonus' ? a.amount : -a.amount), 0);
+    const balance = totalSalary - totalPayments + netAdjustments;
+    document.getElementById('productionWorkerDetailsTotal').innerHTML = `<strong>إجمالي الأجور: ${formatNumber(totalSalary)} ل.س | المدفوع: ${formatNumber(totalPayments)} ل.س | التعديلات: ${netAdjustments >= 0 ? '+' : ''}${formatNumber(netAdjustments)} ل.س | الرصيد: ${formatNumber(balance)} ل.س</strong>`;
+    document.querySelectorAll('.edit-task-btn').forEach(btn => { btn.onclick = () => { const workerId = parseInt(btn.dataset.workerId); const taskId = btn.dataset.taskId; const phaseId = parseInt(btn.dataset.phaseId); const model = btn.dataset.model; const quantity = btn.dataset.quantity; const price = btn.dataset.price; editProductionTaskWithData(workerId, taskId, phaseId, model, quantity, price); }; });
+    document.querySelectorAll('.delete-task-btn').forEach(btn => { btn.onclick = () => { const workerId = parseInt(btn.dataset.workerId); const taskId = btn.dataset.taskId; if (confirm('هل أنت متأكد من حذف هذه المهمة؟')) { deleteProductionTask(workerId, taskId); const updatedWorker = productionWorkers.find(w => w.id === workerId); if (updatedWorker) renderProductionWorkerDetails(updatedWorker); } }; });
+}
+
+function editProductionTaskWithData(workerId, taskId, phaseId, model, quantity, price) {
+    const w = productionWorkers.find(w => w.id === workerId); if (!w) return;
+    const t = w.tasks.find(t => t.id === taskId); if (!t) return;
+    productionCurrentEditTask = { workerId, taskId };
+    const phaseSelect = document.getElementById('productionEditPhaseId');
+    phaseSelect.innerHTML = productionPhases.map(p => `<option value="${p.id}" ${p.id === phaseId ? 'selected' : ''}>${p.name} (${p.price} ل.س)</option>`).join('');
+    document.getElementById('productionEditModel').value = model;
+    document.getElementById('productionEditQuantity').value = quantity;
+    document.getElementById('productionEditPrice').value = price;
+    openModal('productionEditTaskModal');
+}
+
+window.deleteProductionTask = function(workerId, taskId) { if(!confirm('حذف المهمة؟')) return; const w = productionWorkers.find(w=>w.id===workerId); if(!w) return; const t = w.tasks.find(t=>t.id===taskId); if(!t) return; w.tasks = w.tasks.filter(t=>t.id!==taskId); if(productionModelsProgress[t.model]) { const mp = productionModelsProgress[t.model]; mp.completedPhases = mp.completedPhases.filter(p=>p!==t.phaseName); mp.tasks = mp.tasks.filter(tk=>tk.timestamp!==t.timestamp); updateProductionModelStatus(t.model); } saveData(); refreshProductionUI(); showToast('تم الحذف', 'warning'); };
+
+window.showProductionModelDetails = function(model) {
+    const mp = productionModelsProgress[model] || { completedPhases:[], tasks:[], status:'pending', distributions:{} };
+    document.getElementById('productionModelDetailsTitle').innerHTML = `🔍 تفاصيل الموديل: ${model}`;
+    let html = `<p>الحالة: ${mp.status==='completed'?'✅ منتهي':'⏳ قيد التنفيذ'}</p>`;
+    const taskMap = new Map(); if(mp.tasks) mp.tasks.forEach(t => taskMap.set(t.phaseName, t));
+    html += '<h4>📋 المهام المنفذة:</h4><ul style="list-style:none; padding-right:0;">';
+    mp.completedPhases.forEach(phase => { const task = taskMap.get(phase); const worker = task ? productionWorkers.find(w => w.id === task.workerId) : null; const workerName = worker ? worker.name : 'غير معروف'; html += `<li style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>✓ ${phase}</span> <span style="color:#2c7da0;"><i class="fas fa-user"></i> ${workerName}</span></li>`; });
+    html += '</ul>';
+    if(mp.distributions) { html += '<h4>📦 التوزيعات:</h4>'; Object.entries(mp.distributions).forEach(([phaseName, dist]) => { html += `<div style="background:#f8f9fa; padding:10px; border-radius:12px; margin-bottom:10px;"><strong>${phaseName}</strong><ul>`; dist.parts.forEach(p => { const worker = productionWorkers.find(w => w.id === p.workerId); html += `<li>${p.type==='color'?'🎨':'🔗'} ${p.name} - ${p.quantity} قطعة - ${worker?worker.name:'غير معين'}</li>`; }); html += '</ul></div>'; }); }
+    document.getElementById('productionModelDetailsContent').innerHTML = html;
+    openModal('productionModelDetailsModal');
+    document.getElementById('productionManualCompleteBtn').onclick = () => { const note = prompt('سبب الإنهاء اليدوي:'); if (note !== null) { if (!productionModelsProgress[model]) productionModelsProgress[model] = { completedPhases:[], manualCompleted:true, tasks:[], status:'completed' }; else { productionModelsProgress[model].manualCompleted = true; productionModelsProgress[model].status = 'completed'; } saveData(); refreshProductionUI(); closeModal('productionModelDetailsModal'); showToast(`تم إنهاء الموديل ${model} يدوياً`, 'success'); } };
+};
+
+// دوال العمل الثابت
+function renderFixedWorkerDropdown() {
+    const dropdown = document.getElementById('fixedWorkerDropdown');
+    dropdown.innerHTML = fixedWorkers.map(w => `<div class="worker-select-item" onclick="window.selectFixedWorker(${w.id})"><i class="fas fa-user"></i> ${w.name}</div>`).join('');
+}
+window.selectFixedWorker = function(id) {
+    fixedSelectedWorkerId = id;
+    refreshFixedUI();
+    const dropdown = document.getElementById('fixedWorkerDropdown');
+    dropdown.style.display = 'none';
+    setTimeout(() => {
+        const selectedEl = dropdown.querySelector(`.worker-select-item[onclick*="${id}"]`);
+        if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+    }, 10);
+};
+function renderFixedAttendanceLogs() {
+    const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return;
+    const start = document.getElementById('fixedAttFilterStart')?.value, end = document.getElementById('fixedAttFilterEnd')?.value;
+    const logs = w.attendanceLogs.filter(l => (!start||l.date>=start) && (!end||l.date<=end));
+    document.getElementById('fixedAttendanceLogs').innerHTML = logs.length ? logs.map(l => `<div class="log-item"><span>${l.type} - ${l.datetime}</span><button class="btn btn-sm btn-danger" onclick="window.deleteFixedAttendanceLog('${l.id}')">🗑️</button></div>`).join('') : '<div class="badge">لا توجد سجلات</div>';
+}
+window.deleteFixedAttendanceLog = function(logId) { fixedPendingDeleteLogId = logId; fixedPendingDeleteWorkerId = fixedSelectedWorkerId; openModal('fixedDeleteAttendanceModal'); };
+
+function updateFixedSalaryTable() {
+    const start = document.getElementById('fixedSalaryStart')?.value, end = document.getElementById('fixedSalaryEnd')?.value;
+    if(!start||!end) return;
+    const tbody = document.getElementById('fixedSalaryTableBody'); if(!tbody) return;
+    tbody.innerHTML = fixedWorkers.map(w => {
+        const absences = (w.absenceRecords||[]).filter(r=>r.date>=start&&r.date<=end).length;
+        const workMinutes = calculateWorkMinutes(w.shiftStart, w.shiftEnd);
+        const dailyWage = w.weeklyWage / WEEKLY_WORK_DAYS;
+        const baseSalary = Math.max(0, w.weeklyWage - (absences * dailyWage));
+        const overMins = (w.overtimeRecords||[]).filter(r=>r.date>=start&&r.date<=end).reduce((s,r)=>s+r.minutes,0);
+        const lateMins = (w.latenessRecords||[]).filter(r=>r.date>=start&&r.date<=end).reduce((s,r)=>s+r.minutes,0);
+        const minuteValue = getMinuteValueFromWeeklyWage(w.weeklyWage, workMinutes);
+        const overBonus = Math.round(overMins * minuteValue * (w.overtimeRate||1.5));
+        const lateDed = Math.round(lateMins * minuteValue * (w.lateDeductionRate||1.0));
+        const net = baseSalary + overBonus - lateDed;
+        const paid = (w.payments||[]).filter(p=>p.date>=start&&p.date<=end).reduce((s,p)=>s+p.amount,0);
+        const rem = net - paid;
+        return `<tr><td>${w.name}</td><td>${formatNumber(baseSalary)}</td><td>${formatNumber(baseSalary+overBonus)}</td><td>${lateMins}</td><td>${overMins}</td><td>${absences}</td><td>${formatNumber(net)}</td><td>${formatNumber(paid)}</td><td style="color:${rem>=0?'#10b981':'#ef4444'}">${formatNumber(rem)}</td><td><button class="btn btn-sm btn-success" onclick="window.openFixedPayment(${w.id})">💰</button></td></tr>`;
+    }).join('');
+}
+
+window.openFixedPayment = function(id) {
+    fixedCurrentPaymentWorker = id; const w = fixedWorkers.find(w=>w.id===id); if(!w) return;
+    const start = document.getElementById('fixedSalaryStart').value, end = document.getElementById('fixedSalaryEnd').value;
+    const absences = (w.absenceRecords||[]).filter(r=>r.date>=start&&r.date<=end).length;
+    const dailyWage = w.weeklyWage / WEEKLY_WORK_DAYS;
+    const baseSalary = Math.max(0, w.weeklyWage - (absences * dailyWage));
+    const overMins = (w.overtimeRecords||[]).filter(r=>r.date>=start&&r.date<=end).reduce((s,r)=>s+r.minutes,0);
+    const lateMins = (w.latenessRecords||[]).filter(r=>r.date>=start&&r.date<=end).reduce((s,r)=>s+r.minutes,0);
+    const workMinutes = calculateWorkMinutes(w.shiftStart, w.shiftEnd);
+    const minuteValue = getMinuteValueFromWeeklyWage(w.weeklyWage, workMinutes);
+    const overBonus = Math.round(overMins * minuteValue * (w.overtimeRate||1.5));
+    const lateDed = Math.round(lateMins * minuteValue * (w.lateDeductionRate||1.0));
+    const net = baseSalary + overBonus - lateDed;
+    const paid = (w.payments||[]).filter(p=>p.date>=start&&p.date<=end).reduce((s,p)=>s+p.amount,0);
+    const rem = net - paid;
+    if(rem<=0) { showToast('لا يوجد راتب مستحق', 'warning'); return; }
+    document.getElementById('fixedPaymentAmountDisplay').innerHTML = `💰 المستحق: ${formatNumber(rem)} ل.س`;
+    document.getElementById('fixedPaymentAmount').value = rem;
+    document.getElementById('fixedPaymentDate').value = new Date().toISOString().slice(0,10);
+    openModal('fixedPaymentModal');
+};
+
+// ==================== دوال التصدير والاستيراد ====================
+function exportProductionToExcel() {
+    const start = document.getElementById('productionGlobalStartDate').value;
+    const end = document.getElementById('productionGlobalEndDate').value;
+    const data = [['#', 'اسم العامل', 'تأخير (دقيقة)', 'مرات التأخير', 'أيام الغياب', 'الأجور (ل.س)', 'المدفوعات (ل.س)', 'الرصيد (ل.س)']];
+    let totalSalary = 0, totalPayments = 0, totalBalance = 0;
+    productionWorkers.forEach((w, i) => {
+        const tasks = w.tasks.filter(t => t.date >= start && t.date <= end);
+        const salary = tasks.reduce((s, t) => s + t.total, 0);
+        const lateMins = (w.latenessRecords || []).filter(l => l.date >= start && l.date <= end).reduce((s, l) => s + l.minutes, 0);
+        const lateCount = (w.latenessRecords || []).filter(l => l.date >= start && l.date <= end).length;
+        const absCount = (w.absenceRecords || []).filter(a => a.date >= start && a.date <= end).length;
+        const payments = (w.payments || []).filter(p => p.date >= start && p.date <= end).reduce((s, p) => s + p.amount, 0);
+        const balance = salary - payments;
+        totalSalary += salary; totalPayments += payments; totalBalance += balance;
+        data.push([i+1, w.name, lateMins, lateCount, absCount, salary, payments, balance]);
+    });
+    data.push(['', 'الإجمالي', '', '', '', totalSalary, totalPayments, totalBalance]);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'تقرير الإنتاج');
+    XLSX.writeFile(wb, `تقرير_الإنتاج_${start}_${end}.xlsx`);
+    showToast('تم تصدير Excel', 'success');
+}
+
+function exportProductionToPDF() {
+    const start = document.getElementById('productionGlobalStartDate').value;
+    const end = document.getElementById('productionGlobalEndDate').value;
+    const usdRate = parseFloat(document.getElementById('usdRate').value) || 11800;
+    let html = `<html dir="rtl"><head><style>body{font-family:Tahoma;padding:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ccc;padding:8px;}</style></head><body><h2>تقرير عمال الإنتاج</h2><p>${start} - ${end}</p><table><thead><tr><th>#</th><th>الاسم</th><th>تأخير(د)</th><th>غياب</th><th>مهام</th><th>الأجور</th><th>مدفوع</th><th>الرصيد</th></tr></thead><tbody>`;
+    let totalSalary = 0, totalPaid = 0, totalBalance = 0;
+    productionWorkers.forEach((w, i) => {
+        const tasks = w.tasks.filter(t => t.date >= start && t.date <= end);
+        const salary = tasks.reduce((s, t) => s + t.total, 0);
+        const late = (w.latenessRecords || []).filter(l => l.date >= start && l.date <= end).reduce((s, l) => s + l.minutes, 0);
+        const abs = (w.absenceRecords || []).filter(a => a.date >= start && a.date <= end).length;
+        const paid = (w.payments || []).filter(p => p.date >= start && p.date <= end).reduce((s, p) => s + p.amount, 0);
+        totalSalary += salary; totalPaid += paid; totalBalance += (salary - paid);
+        html += `<tr><td>${i+1}</td><td>${w.name}</td><td>${late}</td><td>${abs}</td><td>${tasks.length}</td><td>${formatNumber(salary)}</td><td>${formatNumber(paid)}</td><td>${formatNumber(salary - paid)}</td></tr>`;
+    });
+    html += `<tr style="background:#e0e0e0; font-weight:bold;"><td colspan="5">الإجمالي العام</td><td>${formatNumber(totalSalary)}</td><td>${formatNumber(totalPaid)}</td><td>${formatNumber(totalBalance)}</td></tr>`;
+    html += `</tbody></table><p>سعر الصرف: 1 $ = ${formatNumber(usdRate)} ل.س</p></body></html>`;
+    html2pdf().set({ margin: 0.5, filename: `تقرير_الإنتاج_${start}_${end}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(html).save();
+}
+
+function exportFixedToExcel() {
+    const start = document.getElementById('fixedSalaryStart').value;
+    const end = document.getElementById('fixedSalaryEnd').value;
+    const data = [['الاسم', 'الأساسي', 'الإضافي', 'الخصم', 'الصافي', 'المدفوع', 'المتبقي']];
+    fixedWorkers.forEach(w => {
+        const absences = (w.absenceRecords || []).filter(r => r.date >= start && r.date <= end).length;
+        const workMinutes = calculateWorkMinutes(w.shiftStart, w.shiftEnd);
+        const dailyWage = w.weeklyWage / WEEKLY_WORK_DAYS;
+        const baseSalary = Math.max(0, w.weeklyWage - (absences * dailyWage));
+        const overMins = (w.overtimeRecords || []).filter(r => r.date >= start && r.date <= end).reduce((s, r) => s + r.minutes, 0);
+        const lateMins = (w.latenessRecords || []).filter(r => r.date >= start && r.date <= end).reduce((s, r) => s + r.minutes, 0);
+        const minuteValue = getMinuteValueFromWeeklyWage(w.weeklyWage, workMinutes);
+        const overBonus = Math.round(overMins * minuteValue * (w.overtimeRate || 1.5));
+        const lateDed = Math.round(lateMins * minuteValue * (w.lateDeductionRate || 1.0));
+        const net = baseSalary + overBonus - lateDed;
+        const paid = (w.payments || []).filter(p => p.date >= start && p.date <= end).reduce((s, p) => s + p.amount, 0);
+        const rem = net - paid;
+        data.push([w.name, baseSalary, overBonus, lateDed, net, paid, rem]);
+    });
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'تقرير الثابت');
+    XLSX.writeFile(wb, `تقرير_العمل_الثابت_${start}_${end}.xlsx`);
+    showToast('تم تصدير Excel', 'success');
+}
+
+function exportFixedToPDF() {
+    const start = document.getElementById('fixedSalaryStart').value;
+    const end = document.getElementById('fixedSalaryEnd').value;
+    let html = `<html dir="rtl"><head><style>body{font-family:Tahoma;padding:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ccc;padding:8px;}</style></head><body><h2>تقرير رواتب العمل الثابت</h2><p>${start} إلى ${end}</p><table><thead><tr><th>الاسم</th><th>الأساسي</th><th>الإضافي</th><th>الخصم</th><th>الصافي</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody>`;
+    let totalBase = 0, totalOver = 0, totalDed = 0, totalNet = 0, totalPaid = 0, totalRem = 0;
+    fixedWorkers.forEach(w => {
+        const absences = (w.absenceRecords || []).filter(r => r.date >= start && r.date <= end).length;
+        const dailyWage = w.weeklyWage / WEEKLY_WORK_DAYS;
+        const baseSalary = Math.max(0, w.weeklyWage - (absences * dailyWage));
+        const overMins = (w.overtimeRecords || []).filter(r => r.date >= start && r.date <= end).reduce((s, r) => s + r.minutes, 0);
+        const lateMins = (w.latenessRecords || []).filter(r => r.date >= start && r.date <= end).reduce((s, r) => s + r.minutes, 0);
+        const workMinutes = calculateWorkMinutes(w.shiftStart, w.shiftEnd);
+        const minuteValue = getMinuteValueFromWeeklyWage(w.weeklyWage, workMinutes);
+        const overBonus = Math.round(overMins * minuteValue * (w.overtimeRate || 1.5));
+        const lateDed = Math.round(lateMins * minuteValue * (w.lateDeductionRate || 1.0));
+        const net = baseSalary + overBonus - lateDed;
+        const paid = (w.payments || []).filter(p => p.date >= start && p.date <= end).reduce((s, p) => s + p.amount, 0);
+        const rem = net - paid;
+        totalBase += baseSalary; totalOver += overBonus; totalDed += lateDed; totalNet += net; totalPaid += paid; totalRem += rem;
+        html += `<tr><td>${w.name}</td><td>${formatNumber(baseSalary)}</td><td>${formatNumber(overBonus)}</td><td>${formatNumber(lateDed)}</td><td>${formatNumber(net)}</td><td>${formatNumber(paid)}</td><td>${formatNumber(rem)}</td></tr>`;
+    });
+    html += `<tr style="background:#f0f0f0; font-weight:bold;"><td>الإجمالي</td><td>${formatNumber(totalBase)}</td><td>${formatNumber(totalOver)}</td><td>${formatNumber(totalDed)}</td><td>${formatNumber(totalNet)}</td><td>${formatNumber(totalPaid)}</td><td>${formatNumber(totalRem)}</td></tr>`;
+    html += `</tbody></table></body></html>`;
+    html2pdf().set({ margin: 0.5, filename: `تقرير_الثابت_${start}_${end}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(html).save();
+}
+
+function importFromZKTeco(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const lines = e.target.result.split(/\r?\n/); let addedProduction=0, addedFixed=0;
+        for(let line of lines) {
+            line = line.trim(); if(!line||line.includes('الإداره')) continue;
+            const zkMatch = line.match(/\b(\d{1,3})\b/); if(!zkMatch) continue;
+            const zk = parseInt(zkMatch[1]);
+            const dateMatch = line.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/); 
+            const timeMatch = line.match(/(\d{1,2}):(\d{2})/);
+            const ampmMatch = line.match(/[صم]/);
+            if(!dateMatch||!timeMatch) continue;
+            let day = dateMatch[1], month = dateMatch[2], year = dateMatch[3];
+            if (year.length === 2) year = '20' + year;
+            const date = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+            let hour = parseInt(timeMatch[1]); const minute = timeMatch[2]; const ampm = ampmMatch?ampmMatch[0]:null;
+            if(ampm==='م' && hour<12) hour+=12; if(ampm==='ص' && hour===12) hour=0;
+            const time24 = `${hour.toString().padStart(2,'0')}:${minute}`;
+            const addLog = (worker, isProduction) => {
+                if(!worker) return false;
+                const existing = worker.attendanceLogs.filter(l=>l.date===date);
+                const hasCheckin = existing.some(l=>l.type==='دخول');
+                const hasCheckout = existing.some(l=>l.type==='خروج');
+                let logType = 'دخول'; if(hasCheckin && !hasCheckout) logType='خروج'; else if(hasCheckin && hasCheckout) return false;
+                const log = { type: logType, datetime: `${date} ${convertTo12Hour(time24)}`, date, id: Date.now()+'-'+Math.random().toString(36) };
+                if(logType==='دخول') { const late = calculateLateness(worker.shiftStart, time24); if(late>0) { log.note = `تأخر ${late} دقيقة`; worker.latenessRecords.push({ date, minutes: late }); } }
+                else { const overtime = calculateOvertime(worker.shiftEnd, time24); if(overtime>0) { log.note = `إضافي ${overtime} دقيقة`; if(isProduction) { worker.overtimeRecords = worker.overtimeRecords||[]; worker.overtimeRecords.push({ date, minutes: overtime }); } else { worker.overtimeRecords.push({ date, minutes: overtime }); } } }
+                worker.attendanceLogs.unshift(log); return true;
+            };
+            const pw = productionWorkers.find(w=>w.zkUID===zk); if(pw && addLog(pw, true)) addedProduction++;
+            const fw = fixedWorkers.find(w=>w.zkUID===zk); if(fw && addLog(fw, false)) addedFixed++;
+        }
+        if(addedProduction>0||addedFixed>0) { saveData(); refreshAllUI(); }
+        showToast(`✅ استيراد: ${addedProduction} إنتاجي, ${addedFixed} ثابت`, 'success');
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+// ==================== دوال التقارير الذكية ====================
+function generateSmartReport(start, end) {
+    const models = Object.entries(productionModelsProgress).map(([model, data]) => ({ model, ...data }));
+    const completed = models.filter(m => m.status === 'completed').length;
+    const total = models.length;
+    const totalQuantity = models.reduce((s, m) => s + (m.tasks || []).reduce((sum, t) => sum + (t.quantity || 0), 0), 0);
+    const groupsText = productionCompletionGroups.map(g => `• ${g.name || 'مجموعة'}: ${g.phases.join(' + ')}`).join('<br>');
+    const phaseStats = {};
+    productionWorkers.forEach(w => { w.tasks.filter(t => t.date >= start && t.date <= end).forEach(t => { if (!phaseStats[t.phaseName]) phaseStats[t.phaseName] = { count: 0, quantity: 0, total: 0 }; phaseStats[t.phaseName].count++; phaseStats[t.phaseName].quantity += t.quantity || 0; phaseStats[t.phaseName].total += t.total || 0; }); });
+    const sortedPhases = Object.entries(phaseStats).sort((a,b) => b[1].total - a[1].total);
+    let html = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div style="background:#f8fafc; border-radius:20px; padding:15px;"><canvas id="modelChart" width="300" height="200"></canvas></div>
+            <div style="background:#f8fafc; border-radius:20px; padding:15px;"><canvas id="phaseChart" width="300" height="200"></canvas></div>
+        </div>
+        <div class="stats-grid" style="margin-top:20px; display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+            <div class="stat-card"><div class="stat-number">${total}</div><div>إجمالي الموديلات</div></div>
+            <div class="stat-card"><div class="stat-number">${completed}</div><div>موديلات مكتملة</div></div>
+            <div class="stat-card"><div class="stat-number">${total - completed}</div><div>قيد التنفيذ</div></div>
+            <div class="stat-card"><div class="stat-number">${total ? (completed/total*100).toFixed(1) : 0}%</div><div>نسبة الإكمال</div></div>
+            <div class="stat-card"><div class="stat-number">${totalQuantity.toLocaleString()}</div><div>إجمالي القطع</div></div>
+        </div>
+        <div style="background:#e8f5e9; padding:12px; border-radius:16px; margin:15px 0;"><strong>💡 مجموعات الإكمال المطلوبة:</strong><br>${groupsText}</div>
+        <h4>📊 أكثر المهام إنتاجية</h4>
+        <table><tr><th>المهمة</th><th>عدد المهام</th><th>إجمالي القطع</th><th>إجمالي الأجور</th></tr>
+        ${sortedPhases.slice(0,5).map(p => `<tr><td>${p[0]}</td><td>${p[1].count}</td><td>${p[1].quantity}</td><td>${formatNumber(p[1].total)} ل.س</td></tr>`).join('')}
+        </table>
+    `;
+    setTimeout(() => {
+        const modelCanvas = document.getElementById('modelChart');
+        const phaseCanvas = document.getElementById('phaseChart');
+        if (modelCanvas && phaseCanvas) {
+            new Chart(modelCanvas, { type: 'doughnut', data: { labels: ['مكتملة', 'قيد التنفيذ'], datasets: [{ data: [completed, total - completed], backgroundColor: ['#27ae60', '#e67e22'] }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } } });
+            new Chart(phaseCanvas, { type: 'bar', data: { labels: sortedPhases.slice(0,5).map(p => p[0]), datasets: [{ label: 'إجمالي الأجور (ل.س)', data: sortedPhases.slice(0,5).map(p => p[1].total), backgroundColor: '#2c7da0' }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } } });
+        }
+    }, 200);
+    return html;
+}
+
+function generateWorkersEvaluation(start, end) {
+    const evalList = productionWorkers.map(w => {
+        const tasks = w.tasks.filter(t => t.date >= start && t.date <= end);
+        const salary = tasks.reduce((s, t) => s + t.total, 0);
+        const quantity = tasks.reduce((s, t) => s + (t.quantity || 0), 0);
+        const lateMins = (w.latenessRecords || []).filter(l => l.date >= start && l.date <= end).reduce((s, l) => s + l.minutes, 0);
+        const absCount = (w.absenceRecords || []).filter(a => a.date >= start && a.date <= end).length;
+        const lateCount = (w.latenessRecords || []).filter(l => l.date >= start && l.date <= end).length;
+        const productionScore = Math.min(50, (quantity * 0.5) + (tasks.length * 2));
+        const incomeScore = Math.min(30, salary / 50000);
+        const punctualityScore = Math.max(0, 20 - (lateMins / 30) - (absCount * 5) - (lateCount * 2));
+        const totalScore = productionScore + incomeScore + punctualityScore;
+        return { ...w, salary, quantity, tasks: tasks.length, lateMins, absCount, lateCount, productionScore: Math.round(productionScore), incomeScore: Math.round(incomeScore), punctualityScore: Math.round(punctualityScore), totalScore: Math.round(totalScore) };
+    });
+    evalList.sort((a,b) => b.totalScore - a.totalScore);
+    let html = `<div class="stats-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;"><div class="stat-card"><div class="stat-number">${productionWorkers.length}</div><div>إجمالي العمال</div></div><div class="stat-card"><div class="stat-number">${evalList.reduce((s,w)=>s+w.tasks,0)}</div><div>إجمالي المهام</div></div><div class="stat-card"><div class="stat-number">${formatNumber(evalList.reduce((s,w)=>s+w.salary,0))}</div><div>إجمالي الأجور</div></div></div>`;
+    html += `<h4>🏆 الترتيب العام للعمال</h4><table><tr><th>#</th><th>العامل</th><th>الإنتاج</th><th>الدخل</th><th>الالتزام</th><th>المجموع</th></tr>`;
+    evalList.forEach((w, i) => { html += `<tr><td>${i+1}</td><td>${w.name}</td><td>${w.productionScore}</td><td>${w.incomeScore}</td><td>${w.punctualityScore}</td><td><strong>${w.totalScore}</strong></td></tr>`; });
+    html += `</table>`;
+    const best = evalList[0], worst = evalList[evalList.length-1];
+    html += `<div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:15px;"><div style="background:#e8f5e9; padding:15px; border-radius:20px;"><h4>🥇 الأفضل أداءً: ${best.name}</h4><p>المهام: ${best.tasks} | القطع: ${best.quantity} | الأجر: ${formatNumber(best.salary)} ل.س</p><p>نقاط الإنتاج: ${best.productionScore} | الدخل: ${best.incomeScore} | الالتزام: ${best.punctualityScore}</p></div><div style="background:#fee2e2; padding:15px; border-radius:20px;"><h4>🔻 يحتاج متابعة: ${worst.name}</h4><p>المهام: ${worst.tasks} | القطع: ${worst.quantity} | الأجر: ${formatNumber(worst.salary)} ل.س</p><p>نقاط الإنتاج: ${worst.productionScore} | الدخل: ${worst.incomeScore} | الالتزام: ${worst.punctualityScore}</p></div></div>`;
+    return html;
+}
+
+// ==================== دوال التنظيف والتحديث ====================
+function cleanupOldData(months) {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    productionWorkers.forEach(w => {
+        w.tasks = w.tasks.filter(t => t.date >= cutoffStr);
+        w.attendanceLogs = w.attendanceLogs.filter(l => (l.date || (l.datetime || '').split(' ')[0]) >= cutoffStr);
+        w.latenessRecords = (w.latenessRecords || []).filter(r => r.date >= cutoffStr);
+        w.absenceRecords = (w.absenceRecords || []).filter(r => r.date >= cutoffStr);
+        w.payments = (w.payments || []).filter(p => p.date >= cutoffStr);
+        w.adjustments = (w.adjustments || []).filter(a => a.date >= cutoffStr);
+        w.overtimeRecords = (w.overtimeRecords || []).filter(r => r.date >= cutoffStr);
+    });
+    fixedWorkers.forEach(w => {
+        w.attendanceLogs = w.attendanceLogs.filter(l => l.date >= cutoffStr);
+        w.latenessRecords = (w.latenessRecords || []).filter(r => r.date >= cutoffStr);
+        w.overtimeRecords = (w.overtimeRecords || []).filter(r => r.date >= cutoffStr);
+        w.absenceRecords = (w.absenceRecords || []).filter(r => r.date >= cutoffStr);
+        w.payments = (w.payments || []).filter(p => p.date >= cutoffStr);
+    });
+    Object.keys(productionModelsProgress).forEach(model => {
+        const mp = productionModelsProgress[model];
+        const hasRecentTasks = (mp.tasks || []).some(t => t.date >= cutoffStr);
+        if (!hasRecentTasks) delete productionModelsProgress[model];
+    });
+    saveData(); refreshAllUI();
+    showToast(`✅ تم تنظيف البيانات الأقدم من ${months} أشهر`, 'success');
+}
+
+function updateAllSalariesByExchangeRate() {
+    const newRate = parseFloat(document.getElementById('settingsUsdRate').value);
+    if (!newRate || newRate <= 0) { showToast('أدخل سعر صرف صحيح', 'error'); return; }
+    document.getElementById('usdRate').value = newRate;
+    let updatedCount = 0;
+    productionWorkers.forEach(worker => {
+        worker.tasks.forEach(task => {
+            if (task.priceUSD !== undefined && task.priceUSD > 0) {
+                const newPrice = Math.round(task.priceUSD * newRate);
+                if (task.pricePerUnit !== newPrice) {
+                    task.pricePerUnit = newPrice;
+                    task.total = task.quantity * newPrice;
+                    task.totalUSD = task.total / newRate;
+                    updatedCount++;
+                }
+            } else if (task.pricePerUnit > 0) {
+                task.priceUSD = task.pricePerUnit / newRate;
+                task.totalUSD = task.total / newRate;
+                updatedCount++;
+            }
+        });
+    });
+    if (updatedCount > 0) { saveData(); refreshProductionUI(); showToast(`✅ تم تحديث ${updatedCount} مهمة حسب سعر الصرف الجديد (${newRate} ل.س)`, 'success'); }
+    else { showToast(`سعر الصرف الحالي: ${newRate} ل.س (لا توجد تغييرات)`, 'info'); }
+}
+
+// ==================== ربط الأحداث والتهيئة ====================
+function initDates() {
+    const end = new Date(), start = new Date(); start.setDate(end.getDate()-7);
+    const format = d => d.toISOString().slice(0,10);
+    document.getElementById('productionGlobalStartDate').value = format(start); document.getElementById('productionGlobalEndDate').value = format(end);
+    document.getElementById('fixedSalaryStart').value = format(start); document.getElementById('fixedSalaryEnd').value = format(end);
+    document.getElementById('fixedAttFilterStart').value = format(start); document.getElementById('fixedAttFilterEnd').value = format(end);
+}
+
+    function bindEvents() {
+        document.querySelectorAll('.main-tab-btn').forEach(b => b.onclick = () => { document.querySelectorAll('.main-tab-btn').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.main-tab-pane').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.getElementById(b.dataset.tab).classList.add('active'); });
+        document.querySelectorAll('.inner-tab-btn').forEach(b => b.onclick = () => { const parent = b.closest('.main-tab-pane'); parent.querySelectorAll('.inner-tab-btn').forEach(x=>x.classList.remove('active')); parent.querySelectorAll('.inner-tab-pane').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.getElementById(b.dataset.innerTab).classList.add('active'); });
+        document.querySelectorAll('.card-header').forEach(h => h.onclick = () => { const target = document.getElementById(h.dataset.target); if(target) { target.classList.toggle('collapsed'); h.querySelector('.toggle-icon')?.classList.toggle('fa-chevron-up'); } });
+        document.getElementById('skipLoginBtn').onclick = () => { const worker = productionWorkers.find(w => w.id === 1) || productionWorkers[0]; if (!worker) return; currentUser = { email: worker.email || 'worker@local', name: worker.name, role: 'admin', id: worker.id, type: 'production' }; document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainAppContainer').style.display = 'block'; applyRoleBasedUI(currentUser.role); showToast(`👋 مرحباً ${worker.name}`, 'success'); };
+        document.getElementById('darkModeToggle').onclick = () => document.body.classList.toggle('light-mode');
+        document.getElementById('settingsDarkModeBtn').onclick = () => document.body.classList.toggle('light-mode');
+        document.getElementById('globalBackupBtn').onclick = () => { const backup = { productionWorkers, productionPhases, productionModelsProgress, productionCompletionGroups, productionLastUsedModels, fixedWorkers, pendingEditRequests }; const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); showToast('✅ نسخ احتياطي'); };
+        document.getElementById('globalRestoreBtn').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = e => { const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = ev => { try { const data = JSON.parse(ev.target.result); if(data.productionWorkers) productionWorkers = data.productionWorkers; if(data.productionPhases) productionPhases = data.productionPhases; if(data.productionModelsProgress) productionModelsProgress = data.productionModelsProgress; if(data.productionCompletionGroups) productionCompletionGroups = data.productionCompletionGroups; if(data.fixedWorkers) fixedWorkers = data.fixedWorkers; if(data.pendingEditRequests) pendingEditRequests = data.pendingEditRequests; saveData(); refreshAllUI(); showToast('✅ تمت الاستعادة'); } catch(err) { showToast('ملف غير صالح', 'error'); } }; reader.readAsText(file); }; input.click(); };
+        document.getElementById('settingsBackupBtn').onclick = () => document.getElementById('globalBackupBtn').click();
+        document.getElementById('settingsRestoreBtn').onclick = () => document.getElementById('globalRestoreBtn').click();
+        document.getElementById('settingsCleanupBtn').onclick = () => { const monthsSelect = document.createElement('select'); monthsSelect.id = 'cleanupMonthsSelect'; monthsSelect.style.margin = '10px 0'; monthsSelect.style.padding = '8px'; monthsSelect.style.borderRadius = '20px'; monthsSelect.innerHTML = '<option value="3">3 أشهر</option><option value="6">6 أشهر</option><option value="12">12 شهر</option>'; const msg = document.getElementById('globalConfirmMessage'); msg.innerHTML = '⚠️ سيتم حذف جميع السجلات (مهام، حضور، مدفوعات) الأقدم من الفترة المحددة. لا يمكن التراجع!'; msg.appendChild(document.createElement('br')); msg.appendChild(document.createElement('br')); msg.appendChild(document.createTextNode('اختر المدة: ')); msg.appendChild(monthsSelect); document.getElementById('globalConfirmTitle').innerText = 'تنظيف البيانات القديمة'; openModal('globalConfirmModal'); globalConfirmCallback = () => { const months = parseInt(document.getElementById('cleanupMonthsSelect').value); cleanupOldData(months); closeModal('globalConfirmModal'); document.getElementById('globalConfirmMessage').innerHTML = 'هل أنت متأكد؟'; }; };
+        document.getElementById('globalConfirmYesBtn').onclick = () => { if(globalConfirmCallback) globalConfirmCallback(); closeModal('globalConfirmModal'); };
+        document.getElementById('globalConfirmNoBtn').onclick = () => { closeModal('globalConfirmModal'); document.getElementById('globalConfirmMessage').innerHTML = 'هل أنت متأكد؟'; };
+        document.getElementById('settingsImportTextBtn').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.txt'; input.onchange = e => { if(e.target.files[0]) importFromZKTeco(e.target.files[0]); }; input.click(); };
+        document.getElementById('settingsUpdateExchangeBtn').onclick = updateAllSalariesByExchangeRate;
+        document.getElementById('usdRate').addEventListener('input', function() { document.getElementById('settingsUsdRate').value = this.value; updateProductionPriceUSDDisplay(); });
+        document.getElementById('settingsUsdRate').addEventListener('input', function() { document.getElementById('usdRate').value = this.value; updateProductionPriceUSDDisplay(); });
+        document.getElementById('productionTaskPrice').addEventListener('input', updateProductionPriceUSDDisplay);
+        // ربط أحداث الإنتاج
+        document.getElementById('productionAddWorkerBtn').onclick = () => { const name = document.getElementById('productionNewWorkerName').value.trim(); if(!name) { showToast('أدخل الاسم', 'error'); return; } const email = document.getElementById('productionNewWorkerEmail')?.value.trim() || ''; const role = document.getElementById('productionNewWorkerRole')?.value || 'worker'; const zk = parseInt(document.getElementById('productionNewWorkerZKUID').value) || null; const id = productionWorkers.length ? Math.max(...productionWorkers.map(w=>w.id))+1 : 1; productionWorkers.push({ id, name, email, role, zkUID: zk, shiftStart: document.getElementById('productionShiftStart').value, shiftEnd: document.getElementById('productionShiftEnd').value, attendanceLogs:[], tasks:[], payments:[], adjustments:[], latenessRecords:[], absenceRecords:[] }); saveData(); refreshProductionUI(); showToast(`✅ تم إضافة ${name}`); document.getElementById('productionNewWorkerName').value = ''; if(document.getElementById('productionNewWorkerEmail')) document.getElementById('productionNewWorkerEmail').value = ''; if(document.getElementById('productionNewWorkerRole')) document.getElementById('productionNewWorkerRole').value = 'worker'; document.getElementById('productionNewWorkerZKUID').value = ''; };
+        document.getElementById('productionRemoveWorkerBtn').onclick = () => { const id = parseInt(document.getElementById('productionRemoveWorkerSelect').value); if(confirm('حذف العامل؟')) { productionWorkers = productionWorkers.filter(w=>w.id!==id); saveData(); refreshProductionUI(); showToast('تم الحذف', 'warning'); } };
+        document.getElementById('productionAddPhaseBtn').onclick = () => { const name = document.getElementById('productionPhaseName').value.trim(); const price = parseFloat(document.getElementById('productionPhasePrice').value)||0; if(!name) { showToast('أدخل اسم المهمة', 'error'); return; } const id = productionPhases.length ? Math.max(...productionPhases.map(p=>p.id))+1 : 10; productionPhases.push({ id, name, price }); saveData(); refreshProductionUI(); showToast(`✅ تم إضافة ${name}`); document.getElementById('productionPhaseName').value = ''; document.getElementById('productionPhasePrice').value = ''; };
+        document.getElementById('productionCheckinBtn').onclick = () => { const id = parseInt(document.getElementById('productionAttendanceWorkerSelect').value); if(id) addProductionAttendance(id, 'دخول'); };
+        document.getElementById('productionCheckoutBtn').onclick = () => { const id = parseInt(document.getElementById('productionAttendanceWorkerSelect').value); if(id) addProductionAttendance(id, 'خروج'); };
+        document.getElementById('productionAbsentBtn').onclick = () => { const id = parseInt(document.getElementById('productionAttendanceWorkerSelect').value); if(id) addProductionAbsence(id); };
+        document.getElementById('productionApplyAttFilterBtn').onclick = () => { const id = parseInt(document.getElementById('productionAttendanceWorkerSelect').value); if(id) renderProductionAttendanceLogs(id); };
+        document.getElementById('productionAssignTaskBtn').onclick = () => { const wid = parseInt(document.getElementById('productionWorkerForTask').value); const pid = parseInt(document.getElementById('productionPhaseForTask').value); const model = document.getElementById('productionTaskModel').value.trim(); const qty = parseFloat(document.getElementById('productionTaskQuantity').value); const price = parseFloat(document.getElementById('productionTaskPrice').value); addProductionTaskWithConfirm(wid, pid, model, qty, price); };
+        document.getElementById('productionPhaseForTask').onchange = function() { const p = productionPhases.find(p=>p.id==this.value); if(p) document.getElementById('productionTaskPrice').value = p.price; updateProductionPriceUSDDisplay(); };
+        document.getElementById('productionApplyPeriodBtn').onclick = () => { updateProductionWorkersTable(); updateProductionModelsTable(); };
+        document.getElementById('productionResetPeriodBtn').onclick = () => { const e = new Date(); const s = new Date(); s.setDate(e.getDate()-7); document.getElementById('productionGlobalStartDate').value = s.toISOString().slice(0,10); document.getElementById('productionGlobalEndDate').value = e.toISOString().slice(0,10); updateProductionWorkersTable(); };
+        document.getElementById('productionAddCompletionGroupBtn').onclick = () => { productionCurrentGroupIndex = -1; productionTempGroupPhases = []; document.getElementById('productionEditGroupName').value = ''; renderProductionTempGroupPhases(); openModal('productionEditGroupModal'); };
+        document.getElementById('productionAddPhaseToGroupBtn').onclick = () => { const p = document.getElementById('productionNewPhaseForGroup').value.trim(); if(p && !productionTempGroupPhases.includes(p)) { productionTempGroupPhases.push(p); renderProductionTempGroupPhases(); document.getElementById('productionNewPhaseForGroup').value = ''; } };
+        document.getElementById('productionSaveGroupBtn').onclick = () => { if(!productionTempGroupPhases.length) { showToast('أضف مهمة', 'error'); return; } const name = document.getElementById('productionEditGroupName').value.trim(); if(productionCurrentGroupIndex>=0) productionCompletionGroups[productionCurrentGroupIndex] = { name, phases: [...productionTempGroupPhases] }; else productionCompletionGroups.push({ name, phases: [...productionTempGroupPhases] }); saveData(); closeModal('productionEditGroupModal'); renderProductionCompletionGroups(); showToast('تم الحفظ'); };
+        document.getElementById('productionConfirmAddBtn').onclick = () => { if(productionPendingDuplicate) { executeProductionAddTask(productionPendingDuplicate.workerId, productionPendingDuplicate.phaseId, productionPendingDuplicate.model, productionPendingDuplicate.quantity, productionPendingDuplicate.price); productionPendingDuplicate = null; } closeModal('productionConfirmDuplicateModal'); refreshProductionUI(); };
+        document.getElementById('productionCancelAddBtn').onclick = () => closeModal('productionConfirmDuplicateModal');
+        document.getElementById('productionConfirmEditBtn').onclick = () => { const { workerId, taskId } = productionCurrentEditTask; const w = productionWorkers.find(w=>w.id===workerId); if(!w) return; const t = w.tasks.find(t=>t.id===taskId); if(!t) return; const newPhaseId = parseInt(document.getElementById('productionEditPhaseId').value); const newModel = document.getElementById('productionEditModel').value.trim(); const newQty = parseFloat(document.getElementById('productionEditQuantity').value); const newPrice = parseFloat(document.getElementById('productionEditPrice').value); const phase = productionPhases.find(p=>p.id===newPhaseId); if(!phase) return; if(productionModelsProgress[t.model]) { const mp = productionModelsProgress[t.model]; mp.completedPhases = mp.completedPhases.filter(p=>p!==t.phaseName); mp.tasks = mp.tasks.filter(tk=>tk.timestamp!==t.timestamp); updateProductionModelStatus(t.model); } t.phaseId = newPhaseId; t.phaseName = phase.name; t.model = newModel; t.quantity = newQty; t.pricePerUnit = newPrice; t.total = newQty*newPrice; addProductionPhaseToModelDirect(newModel, phase.name, workerId, newQty, newPrice); saveData(); closeModal('productionEditTaskModal'); refreshProductionUI(); showToast('تم التعديل'); };
+        document.getElementById('productionConfirmPaymentBtn').onclick = () => { const amt = parseFloat(document.getElementById('productionPaymentAmount').value); if(!amt) return; const w = productionWorkers.find(w=>w.id===productionCurrentWorkerId); if(w) { w.payments.push({ amount: amt, date: new Date().toISOString().slice(0,10), method: document.getElementById('productionPaymentMethod').value }); saveData(); closeModal('productionPaymentModal'); showToast('تم تسجيل الدفعة'); } };
+        document.getElementById('productionDistributeTaskBtn').onclick = () => { const phaseId = parseInt(document.getElementById('productionPhaseForTask').value); const phase = productionPhases.find(p => p.id === phaseId); const model = document.getElementById('productionTaskModel').value.trim(); const price = parseFloat(document.getElementById('productionTaskPrice').value); if (!model) { showToast('أدخل رقم الموديل', 'error'); return; } if (!phase) { showToast('اختر مهمة', 'error'); return; } openDistributionModal(phaseId, phase.name, price, model); };
+        document.getElementById('productionSaveDistributionBtn').onclick = saveDistribution;
+        document.getElementById('productionCloseDistModalBtn').onclick = () => closeModal('productionDistributionModal');
+        document.getElementById('productionExportExcelBtn').onclick = exportProductionToExcel;
+        document.getElementById('productionExportPdfBtn').onclick = exportProductionToPDF;
+        document.getElementById('productionSmartReportBtn').onclick = () => { document.getElementById('productionReportStartDate').value = document.getElementById('productionGlobalStartDate').value; document.getElementById('productionReportEndDate').value = document.getElementById('productionGlobalEndDate').value; openModal('productionSmartReportModal'); };
+        document.getElementById('productionGenerateReportBtn').onclick = () => { const start = document.getElementById('productionReportStartDate').value; const end = document.getElementById('productionReportEndDate').value; document.getElementById('productionReportContent').innerHTML = generateSmartReport(start, end); };
+        document.getElementById('productionEvaluationBtn').onclick = () => { document.getElementById('productionEvalStartDate').value = document.getElementById('productionGlobalStartDate').value; document.getElementById('productionEvalEndDate').value = document.getElementById('productionGlobalEndDate').value; openModal('productionEvaluationModal'); };
+        document.getElementById('productionGenerateEvalBtn').onclick = () => { const start = document.getElementById('productionEvalStartDate').value; const end = document.getElementById('productionEvalEndDate').value; document.getElementById('productionEvalContent').innerHTML = generateWorkersEvaluation(start, end); };
+        document.getElementById('productionApplyWorkerFilterBtn').onclick = () => { const w = productionWorkers.find(w => w.id === productionCurrentWorkerId); if (w) renderProductionWorkerDetails(w); };
+        document.getElementById('productionResetWorkerFilterBtn').onclick = () => { const today = new Date(); const monthAgo = new Date(); monthAgo.setDate(today.getDate() - 30); document.getElementById('productionWorkerModalStart').value = monthAgo.toISOString().slice(0, 10); document.getElementById('productionWorkerModalEnd').value = today.toISOString().slice(0, 10); const w = productionWorkers.find(w => w.id === productionCurrentWorkerId); if (w) renderProductionWorkerDetails(w); };
+        document.getElementById('productionAddPaymentFromDetailsBtn').onclick = () => { openProductionPaymentModal(productionCurrentWorkerId); };
+        document.getElementById('productionPrintReceiptBtn').onclick = () => { const worker = productionWorkers.find(w => w.id === productionCurrentWorkerId); if (!worker) return; const start = document.getElementById('productionWorkerModalStart').value; const end = document.getElementById('productionWorkerModalEnd').value; const tasks = worker.tasks.filter(t => t.date >= start && t.date <= end); const payments = (worker.payments || []).filter(p => p.date >= start && p.date <= end); const adjustments = (worker.adjustments || []).filter(a => a.date >= start && a.date <= end); let content = `<html dir="rtl"><head><style>body{font-family:Tahoma;padding:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ccc;padding:8px;}</style></head><body>`; content += `<h2>كشف حساب: ${worker.name}</h2><p>${start} إلى ${end}</p>`; content += `<h3>المهام</h3><table><tr><th>التاريخ</th><th>المهمة</th><th>الموديل</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr>`; tasks.forEach(t => content += `<tr><td>${t.date}</td><td>${t.phaseName}</td><td>${t.model}</td><td>${t.quantity}</td><td>${formatNumber(t.pricePerUnit)}</td><td>${formatNumber(t.total)}</td></tr>`); content += `</table>`; const totalSalary = tasks.reduce((s,t) => s + t.total, 0); content += `<p><strong>إجمالي الأجور: ${formatNumber(totalSalary)} ل.س</strong></p>`; content += `<h3>المدفوعات</h3><table><tr><th>التاريخ</th><th>الطريقة</th><th>المبلغ</th></tr>`; payments.forEach(p => content += `<tr><td>${p.date}</td><td>${p.method}</td><td>${formatNumber(p.amount)}</td></tr>`); content += `</table>`; content += `<h3>التعديلات</h3><table><tr><th>التاريخ</th><th>السبب</th><th>المبلغ</th></tr>`; adjustments.forEach(a => content += `<tr><td>${a.date}</td><td>${a.reason}</td><td>${a.type==='bonus'?'+':'-'}${formatNumber(a.amount)}</td></tr>`); content += `</table>`; const totalPayments = payments.reduce((s,p) => s + p.amount, 0); const netAdjustments = adjustments.reduce((s,a) => s + (a.type==='bonus'? a.amount : -a.amount), 0); const balance = totalSalary - totalPayments + netAdjustments; content += `<p><strong>الرصيد المستحق: ${formatNumber(balance)} ل.س</strong></p>`; content += `</body></html>`; html2pdf().set({ margin: 0.5, filename: `كشف_${worker.name}_${start}_${end}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(content).save(); };
+        document.getElementById('productionAddAdjustmentFromDetailsBtn').onclick = () => { openModal('productionAdjustmentModal'); };
+        document.getElementById('productionConfirmAdjustmentBtn').onclick = () => { const amt = parseFloat(document.getElementById('productionAdjustmentAmount').value); if(!amt) return; const w = productionWorkers.find(w=>w.id===productionCurrentWorkerId); if(w) { w.adjustments = w.adjustments || []; w.adjustments.push({ amount: amt, date: new Date().toISOString().slice(0,10), type: document.getElementById('productionAdjustmentType').value, reason: document.getElementById('productionAdjustmentReason').value }); saveData(); closeModal('productionAdjustmentModal'); refreshProductionUI(); showToast('تم إضافة التعديل'); } };
+        // أحداث العمل الثابت
+        document.getElementById('fixedAddWorkerBtn').onclick = () => { const name = document.getElementById('fixedNewWorkerName').value.trim(); const wage = parseInt(document.getElementById('fixedNewWeeklyWage').value)||0; const zk = parseInt(document.getElementById('fixedNewZkUid').value)||null; const ss = document.getElementById('fixedNewShiftStart').value; const se = document.getElementById('fixedNewShiftEnd').value; const oRate = parseFloat(document.getElementById('fixedNewOvertimeRate').value)||1.5; const lRate = parseFloat(document.getElementById('fixedNewLateRate').value)||1.0; const email = document.getElementById('fixedNewWorkerEmail').value.trim(); const role = document.getElementById('fixedNewWorkerRole').value; if(!name) { showToast('أدخل الاسم', 'error'); return; } const id = fixedWorkers.length ? Math.max(...fixedWorkers.map(w=>w.id))+1 : 1; fixedWorkers.push({ id, name, email, role, weeklyWage: wage, zkUID: zk, shiftStart: ss, shiftEnd: se, overtimeRate: oRate, lateDeductionRate: lRate, attendanceLogs:[], latenessRecords:[], overtimeRecords:[], absenceRecords:[], payments:[] }); saveData(); refreshFixedUI(); showToast(`✅ تم إضافة ${name}`); };
+        document.getElementById('fixedWorkerSelectBtn').onclick = () => { const dd = document.getElementById('fixedWorkerDropdown'); const isVisible = dd.style.display === 'block'; dd.style.display = isVisible ? 'none' : 'block'; if (!isVisible) { const btn = document.getElementById('fixedWorkerSelectBtn'); const rect = btn.getBoundingClientRect(); if (window.innerHeight - rect.bottom < 250) { dd.style.bottom = '100%'; dd.style.top = 'auto'; dd.style.marginBottom = '5px'; dd.style.marginTop = '0'; } else { dd.style.bottom = 'auto'; dd.style.top = '100%'; dd.style.marginTop = '5px'; dd.style.marginBottom = '0'; } } };
+        document.addEventListener('click', (e) => { if(!e.target.closest('.worker-select-wrapper')) document.getElementById('fixedWorkerDropdown').style.display = 'none'; });
+        document.getElementById('fixedDeleteWorkerBtn').onclick = () => { if(!fixedSelectedWorkerId) return; showConfirm('حذف العامل؟', ()=>{ fixedWorkers = fixedWorkers.filter(w=>w.id!==fixedSelectedWorkerId); fixedSelectedWorkerId = null; saveData(); refreshFixedUI(); showToast('تم الحذف', 'warning'); }); };
+        window.showConfirm = (msg, onYes) => { globalConfirmCallback = onYes; document.getElementById('globalConfirmTitle').innerText = 'تأكيد'; document.getElementById('globalConfirmMessage').innerText = msg; openModal('globalConfirmModal'); };
+        document.getElementById('fixedEditWorkerBtn').onclick = () => { const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; fixedCurrentEditWorker = w.id; document.getElementById('fixedEditWorkerName').value = w.name; document.getElementById('fixedEditWeeklyWage').value = w.weeklyWage; document.getElementById('fixedEditZkUid').value = w.zkUID||''; document.getElementById('fixedEditShiftStart').value = w.shiftStart; document.getElementById('fixedEditShiftEnd').value = w.shiftEnd; document.getElementById('fixedEditOvertimeRate').value = w.overtimeRate; document.getElementById('fixedEditLateRate').value = w.lateDeductionRate; openModal('fixedEditWorkerModal'); };
+        document.getElementById('fixedSaveWorkerEditBtn').onclick = () => { const w = fixedWorkers.find(w=>w.id===fixedCurrentEditWorker); if(!w) return; const newZk = parseInt(document.getElementById('fixedEditZkUid').value)||null; if(newZk && newZk!==w.zkUID && (productionWorkers.some(sw=>sw.zkUID===newZk)||fixedWorkers.some(ew=>ew.id!==fixedCurrentEditWorker && ew.zkUID===newZk))) { showToast('رقم البصمة مستخدم', 'error'); return; } w.name = document.getElementById('fixedEditWorkerName').value; w.weeklyWage = parseInt(document.getElementById('fixedEditWeeklyWage').value)||0; w.zkUID = newZk; w.shiftStart = document.getElementById('fixedEditShiftStart').value; w.shiftEnd = document.getElementById('fixedEditShiftEnd').value; w.overtimeRate = parseFloat(document.getElementById('fixedEditOvertimeRate').value)||1.5; w.lateDeductionRate = parseFloat(document.getElementById('fixedEditLateRate').value)||1.0; saveData(); closeModal('fixedEditWorkerModal'); refreshFixedUI(); showToast('تم التعديل'); };
+        document.getElementById('fixedShowDetailsBtn').onclick = () => { if(!fixedSelectedWorkerId) return; const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; document.getElementById('fixedDetailsWorkerName').innerHTML = `📋 ${w.name}`; const today = new Date().toISOString().slice(0,10); const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7); document.getElementById('fixedDetailsStart').value = weekAgo.toISOString().slice(0,10); document.getElementById('fixedDetailsEnd').value = today; updateFixedDetailsContent(w); openModal('fixedWorkerDetailsModal'); };
+        function updateFixedDetailsContent(w) { const start = document.getElementById('fixedDetailsStart').value, end = document.getElementById('fixedDetailsEnd').value; const logs = w.attendanceLogs.filter(l=>l.date>=start&&l.date<=end); const payments = w.payments.filter(p=>p.date>=start&&p.date<=end); let html = '<h4>📅 الحضور</h4>' + logs.map(l=>`<div class="badge">${l.type} - ${l.datetime}</div>`).join('') + '<h4>💰 المدفوعات</h4>' + payments.map(p=>`<div class="badge">${p.date}: ${formatNumber(p.amount)} ل.س</div>`).join(''); document.getElementById('fixedDetailsContent').innerHTML = html || '<div class="badge">لا توجد بيانات</div>'; }
+        document.getElementById('fixedApplyDetailsFilter').onclick = () => { const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(w) updateFixedDetailsContent(w); };
+        document.getElementById('fixedResetDetailsFilter').onclick = () => { const today = new Date().toISOString().slice(0,10); const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7); document.getElementById('fixedDetailsStart').value = weekAgo.toISOString().slice(0,10); document.getElementById('fixedDetailsEnd').value = today; const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(w) updateFixedDetailsContent(w); };
+        document.getElementById('fixedCheckinBtn').onclick = () => { if(!fixedSelectedWorkerId) { showToast('اختر عاملاً', 'error'); return; } const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; const now = new Date(); const date = now.toISOString().slice(0,10); const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`; if(w.attendanceLogs.some(l=>l.date===date && l.type==='دخول')) { showToast('تم تسجيل دخول مسبقاً', 'warning'); return; } const late = calculateLateness(w.shiftStart, time); if(late>0) w.latenessRecords.push({ date, minutes: late }); const log = { type: 'دخول', datetime: `${date} ${convertTo12Hour(time)}`, date, id: Date.now()+'-'+Math.random().toString(36) }; w.attendanceLogs.unshift(log); saveData(); refreshFixedUI(); showToast(`✅ دخول ${w.name}`); };
+        document.getElementById('fixedCheckoutBtn').onclick = () => { if(!fixedSelectedWorkerId) { showToast('اختر عاملاً', 'error'); return; } const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; const now = new Date(); const date = now.toISOString().slice(0,10); const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`; if(!w.attendanceLogs.some(l=>l.date===date && l.type==='دخول')) { showToast('يجب تسجيل دخول أولاً', 'error'); return; } if(w.attendanceLogs.some(l=>l.date===date && l.type==='خروج')) { showToast('تم تسجيل خروج مسبقاً', 'warning'); return; } const overtime = calculateOvertime(w.shiftEnd, time); if(overtime>0) w.overtimeRecords.push({ date, minutes: overtime }); const log = { type: 'خروج', datetime: `${date} ${convertTo12Hour(time)}`, date, id: Date.now()+'-'+Math.random().toString(36) }; w.attendanceLogs.unshift(log); saveData(); refreshFixedUI(); showToast(`✅ خروج ${w.name}`); };
+        document.getElementById('fixedAbsentBtn').onclick = () => { if(!fixedSelectedWorkerId) { showToast('اختر عاملاً', 'error'); return; } const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; const date = new Date().toISOString().slice(0,10); if(w.attendanceLogs.some(l=>l.date===date)) { showToast('تم تسجيل حضور مسبقاً', 'warning'); return; } w.attendanceLogs.unshift({ type: 'غياب', datetime: date, date, id: Date.now()+'-'+Math.random().toString(36) }); w.absenceRecords.push({ date }); saveData(); refreshFixedUI(); showToast(`📅 غياب ${w.name}`, 'warning'); };
+        document.getElementById('fixedOvertimeBtn').onclick = () => { document.getElementById('fixedOvertimeDate').value = new Date().toISOString().slice(0,10); openModal('fixedOvertimeModal'); };
+        document.getElementById('fixedConfirmOvertimeBtn').onclick = () => { if(!fixedSelectedWorkerId) return; const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; const minutes = parseInt(document.getElementById('fixedOvertimeMinutes').value); const date = document.getElementById('fixedOvertimeDate').value; if(minutes>0) { w.overtimeRecords.push({ date, minutes }); w.attendanceLogs.unshift({ type: 'إضافي يدوي', datetime: `${date} (${minutes} دقيقة)`, date, note: `إضافي ${minutes} دقيقة`, id: Date.now()+'-'+Math.random().toString(36) }); saveData(); refreshFixedUI(); showToast(`⏱️ إضافة ${minutes} دقيقة`); } closeModal('fixedOvertimeModal'); };
+        document.getElementById('fixedApplyAttFilterBtn').onclick = () => renderFixedAttendanceLogs();
+        document.getElementById('fixedCalcSalaryBtn').onclick = () => updateFixedSalaryTable();
+        document.getElementById('fixedResetPeriodBtn').onclick = () => { const e = new Date(), s = new Date(); s.setDate(e.getDate()-7); document.getElementById('fixedSalaryStart').value = s.toISOString().slice(0,10); document.getElementById('fixedSalaryEnd').value = e.toISOString().slice(0,10); updateFixedSalaryTable(); };
+        document.getElementById('fixedConfirmPaymentBtn').onclick = () => { if(!fixedCurrentPaymentWorker) return; const w = fixedWorkers.find(w=>w.id===fixedCurrentPaymentWorker); if(!w) return; const amount = Math.abs(parseInt(document.getElementById('fixedPaymentAmount').value)); const date = document.getElementById('fixedPaymentDate').value; const method = document.getElementById('fixedPaymentMethod').value; w.payments.push({ amount, date, method }); saveData(); refreshFixedUI(); closeModal('fixedPaymentModal'); showToast(`✅ دفعة ${formatNumber(amount)} ل.س`); };
+        document.getElementById('fixedConfirmDeleteAttendanceBtn').onclick = () => { if(!fixedPendingDeleteWorkerId||!fixedPendingDeleteLogId) return; const w = fixedWorkers.find(w=>w.id===fixedPendingDeleteWorkerId); if(w) w.attendanceLogs = w.attendanceLogs.filter(l=>l.id!=fixedPendingDeleteLogId); saveData(); closeModal('fixedDeleteAttendanceModal'); renderFixedAttendanceLogs(); showToast('تم الحذف', 'warning'); };
+        document.getElementById('fixedAddPaymentFromDetails').onclick = () => { const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(w) window.openFixedPayment(w.id); };
+        document.getElementById('fixedPrintReceiptBtn').onclick = () => { const w = fixedWorkers.find(w=>w.id===fixedSelectedWorkerId); if(!w) return; const start = document.getElementById('fixedDetailsStart').value; const end = document.getElementById('fixedDetailsEnd').value; const logs = w.attendanceLogs.filter(l=>l.date>=start&&l.date<=end); const payments = w.payments.filter(p=>p.date>=start&&p.date<=end); let content = `<html dir="rtl"><head><style>body{font-family:Tahoma;padding:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ccc;padding:8px;}</style></head><body>`; content += `<h2>كشف حضور ومدفوعات: ${w.name}</h2><p>${start} إلى ${end}</p>`; content += `<h3>الحضور</h3><ul>`; logs.forEach(l => content += `<li>${l.type} - ${l.datetime}</li>`); content += `</ul><h3>المدفوعات</h3><table><tr><th>التاريخ</th><th>الطريقة</th><th>المبلغ</th></tr>`; payments.forEach(p => content += `<tr><td>${p.date}</td><td>${p.method}</td><td>${formatNumber(p.amount)}</td></tr>`); content += `</table>`; const totalPaid = payments.reduce((s,p) => s + p.amount, 0); content += `<p><strong>إجمالي المدفوع: ${formatNumber(totalPaid)} ل.س</strong></p>`; content += `</body></html>`; html2pdf().set({ margin: 0.5, filename: `كشف_حضور_${w.name}_${start}_${end}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(content).save(); };
+        document.getElementById('fixedImportAttendanceBtn').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.txt'; input.onchange = e => { if(e.target.files[0]) importFromZKTeco(e.target.files[0]); }; input.click(); };
+        document.getElementById('fixedExportExcelBtn').onclick = exportFixedToExcel;
+        document.getElementById('fixedExportPdfBtn').onclick = exportFixedToPDF;
+        // أحداث طلبات التعديل
+        document.getElementById('submitEditRequestBtn').onclick = () => { if (!currentWorkerForEditRequest) return; const { workerId, task } = currentWorkerForEditRequest; const newModel = document.getElementById('reqEditModel').value.trim(); const newQty = parseFloat(document.getElementById('reqEditQuantity').value); const reason = document.getElementById('reqEditReason').value.trim(); if (!newModel || !newQty || newQty <= 0 || !reason) { showToast('جميع الحقول مطلوبة', 'error'); return; } const request = { id: 'req-' + Date.now() + '-' + Math.random().toString(36), workerId, taskId: task.id, originalModel: task.model, originalQty: task.quantity, newModel, newQty, reason, status: 'pending', createdAt: new Date().toISOString() }; pendingEditRequests.push(request); saveData(); closeModal('workerEditRequestModal'); showToast('تم إرسال الطلب بنجاح', 'success'); updatePendingRequestsBadge(); currentWorkerForEditRequest = null; };
+        document.querySelector('[data-tab="tab-requests"]')?.addEventListener('click', () => { renderPendingRequests(); });
+    }
+
+    async function init() {
+        initDates();
+        await loadData();
+        bindEvents();
+        initGoogleSignIn();
+        refreshAllUI();
+        window.addEventListener('beforeunload', () => saveData());
+    }
+    init();
+</script>
+<footer>نظام إدارة المعمل الشامل - النسخة النهائية المُصلحة | جميع الحقوق محفوظة</footer>
+</body>
+</html>
