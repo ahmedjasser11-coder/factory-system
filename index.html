@@ -1143,8 +1143,8 @@ async function saveData() {
 }
 
 async function loadData() {
-    try {
-        const snap = await cloudDB.ref('/').once('value');
+    // تم استبدال once بـ on ليصبح التحديث فورياً بين الأجهزة
+    cloudDB.ref('/').on('value', (snap) => {
         if (snap.exists()) {
             const data = snap.val();
             if (data.production_workers) productionWorkers = data.production_workers;
@@ -1170,9 +1170,7 @@ async function loadData() {
         fixedWorkers.forEach(w => { w.email = w.email||''; w.attendanceLogs = w.attendanceLogs||[]; w.latenessRecords = w.latenessRecords||[]; w.overtimeRecords = w.overtimeRecords||[]; w.absenceRecords = w.absenceRecords||[]; w.payments = w.payments||[]; w.shiftStart = w.shiftStart||"09:00"; w.shiftEnd = w.shiftEnd||"18:00"; w.weeklyWage = w.weeklyWage||500000; w.overtimeRate = w.overtimeRate||1.5; w.lateDeductionRate = w.lateDeductionRate||1.0; w.zkUID = w.zkUID||null; });
         Object.keys(productionModelsProgress).forEach(m => updateProductionModelStatus(m));
         refreshAllUI();
-    } catch(e) {
-        console.warn('Load failed, using local data');
-    }
+    }); // <-- لا تنس إضافة هذه الأقفال في النهاية
 }
 
     function updateProductionModelStatus(model) {
