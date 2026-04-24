@@ -1146,15 +1146,29 @@ async function syncToCloud() {
     if (!useCloud) return;
     try {
         const modelsArray = Object.entries(productionModelsProgress).map(([model, data]) => ({ model, ...data }));
-        await fetch(API_URL + '?action=write&sheet=production_workers&data=' + encodeURIComponent(JSON.stringify(productionWorkers)));
-        await fetch(API_URL + '?action=write&sheet=production_phases&data=' + encodeURIComponent(JSON.stringify(productionPhases)));
-        await fetch(API_URL + '?action=write&sheet=production_models&data=' + encodeURIComponent(JSON.stringify(modelsArray)));
-        await fetch(API_URL + '?action=write&sheet=production_completion_groups&data=' + encodeURIComponent(JSON.stringify(productionCompletionGroups)));
-        await fetch(API_URL + '?action=write&sheet=production_last_models&data=' + encodeURIComponent(JSON.stringify(productionLastUsedModels.map(m => ({ model: m })))));
-        await fetch(API_URL + '?action=write&sheet=fixed_workers&data=' + encodeURIComponent(JSON.stringify(fixedWorkers)));
-        await fetch(API_URL + '?action=write&sheet=edit_requests&data=' + encodeURIComponent(JSON.stringify(pendingEditRequests)));
+        const payloads = [
+            { sheet: 'production_workers', data: productionWorkers },
+            { sheet: 'production_phases', data: productionPhases },
+            { sheet: 'production_models', data: modelsArray },
+            { sheet: 'production_completion_groups', data: productionCompletionGroups },
+            { sheet: 'production_last_models', data: productionLastUsedModels.map(m => ({ model: m })) },
+            { sheet: 'fixed_workers', data: fixedWorkers },
+            { sheet: 'edit_requests', data: pendingEditRequests }
+        ];
+        for (let p of payloads) {
+            const formData = new FormData();
+            formData.append('action', 'write');
+            formData.append('sheet', p.sheet);
+            formData.append('data', JSON.stringify(p.data));
+            await fetch(API_URL, {
+                method: 'POST',
+                body: formData
+            });
+        }
         console.log('✅ Synced to cloud');
-    } catch(e) { console.warn('Sync failed:', e); }
+    } catch(e) {
+        console.warn('Sync failed:', e);
+    }
 }
 
 async function saveData() {
