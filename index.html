@@ -975,7 +975,7 @@
 </div>
 <div id="globalPromptModal" class="modal"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 id="globalPromptTitle">إدخال</h3><span class="close-modal" onclick="closeModal('globalPromptModal')">&times;</span></div><p id="globalPromptMessage">الرجاء الإدخال</p><div class="form-group"><input type="text" id="globalPromptInput" placeholder=""></div><div style="display:flex; gap:12px; margin-top:20px; justify-content:center;"><button id="globalPromptOkBtn" class="btn btn-primary">موافق</button><button id="globalPromptCancelBtn" class="btn btn-outline">إلغاء</button></div></div></div>
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxLDZv0amzZu35GSnGk2LXHQW-wpKUQWctEnrkSugV6GXpNwVxE3SGDvSOajYaJI9GG/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyb9p7ymJT3Co38kRs6nWKV-MV_HayioAALBNmEZ7ql-_cSmDUvJRr-4et8p8wzD1uQ/exec';
 let useCloud = true;
 
 // ==================== المتغيرات العامة والإعدادات الأولية ====================
@@ -1156,15 +1156,16 @@ async function syncToCloud() {
             { sheet: 'edit_requests', data: pendingEditRequests }
         ];
         for (let p of payloads) {
-            const formData = new FormData();
-            formData.append('action', 'write');
-            formData.append('sheet', p.sheet);
-            formData.append('data', JSON.stringify(p.data));
-           await fetch(API_URL, {
-    method: 'POST',
-    body: formData,
-    mode: 'no-cors'
-});
+            const params = new URLSearchParams();
+            params.append('action', 'write');
+            params.append('sheet', p.sheet);
+            params.append('data', JSON.stringify(p.data));
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+        }
         console.log('✅ Synced to cloud');
     } catch(e) {
         console.warn('Sync failed:', e);
@@ -1179,39 +1180,21 @@ async function saveData() {
 async function loadFromCloud() {
     if (!useCloud) return;
     try {
-        const sheets = [
-            'production_workers', 'production_phases', 'production_models',
-            'production_completion_groups', 'production_last_models',
-            'fixed_workers', 'edit_requests'
-        ];
-        const results = {};
+        const sheets = ['production_workers', 'production_phases', 'production_models', 'production_completion_groups', 'production_last_models', 'fixed_workers', 'edit_requests'];
         for (let sheet of sheets) {
-            const formData = new FormData();
-            formData.append('action', 'read');
-            formData.append('sheet', sheet);
+            const params = new URLSearchParams();
+            params.append('action', 'read');
+            params.append('sheet', sheet);
             const resp = await fetch(API_URL, {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
             });
             const data = await resp.json();
-            if (Array.isArray(data)) results[sheet] = data;
+            if (Array.isArray(data)) {
+                window[sheet] = data;  // يجب تحويلها لاحقاً للكائنات الصحيحة
+            }
         }
-        if (results.production_workers) productionWorkers = results.production_workers;
-        if (results.production_phases) productionPhases = results.production_phases;
-        if (results.production_models) {
-            productionModelsProgress = {};
-            results.production_models.forEach(item => {
-                const model = item.model;
-                delete item.model;
-                productionModelsProgress[model] = item;
-            });
-        }
-        if (results.production_completion_groups) productionCompletionGroups = results.production_completion_groups;
-        if (results.production_last_models) {
-            productionLastUsedModels = results.production_last_models.map(i => i.model).filter(Boolean);
-        }
-        if (results.fixed_workers) fixedWorkers = results.fixed_workers;
-        if (results.edit_requests) pendingEditRequests = results.edit_requests;
         console.log('✅ Data loaded from cloud');
         return true;
     } catch (e) {
