@@ -975,7 +975,7 @@
 </div>
 <div id="globalPromptModal" class="modal"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 id="globalPromptTitle">إدخال</h3><span class="close-modal" onclick="closeModal('globalPromptModal')">&times;</span></div><p id="globalPromptMessage">الرجاء الإدخال</p><div class="form-group"><input type="text" id="globalPromptInput" placeholder=""></div><div style="display:flex; gap:12px; margin-top:20px; justify-content:center;"><button id="globalPromptOkBtn" class="btn btn-primary">موافق</button><button id="globalPromptCancelBtn" class="btn btn-outline">إلغاء</button></div></div></div>
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwByQC3o2ZbNqqMjTxYNpqZC2HmWDOyQmDWSpnr1LgWhl-mlkq7c5jCiQK3zCku8RiT/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyV7RT2Zep3hIz8GI6c-J5OrTAgWMUYAofvcat9YM6jc7SVaikswOcFtuZncpmUVsPq/exec';
 let useCloud = true;
 
 // ==================== المتغيرات العامة والإعدادات الأولية ====================
@@ -1179,10 +1179,20 @@ async function saveData() {
 async function loadFromCloud() {
     if (!useCloud) return;
     try {
-        const sheets = ['production_workers', 'production_phases', 'production_models', 'production_completion_groups', 'production_last_models', 'fixed_workers', 'edit_requests'];
+        const sheets = [
+            'production_workers', 'production_phases', 'production_models',
+            'production_completion_groups', 'production_last_models',
+            'fixed_workers', 'edit_requests'
+        ];
         const results = {};
         for (let sheet of sheets) {
-            const resp = await fetch(API_URL + '?action=read&sheet=' + sheet);
+            const formData = new FormData();
+            formData.append('action', 'read');
+            formData.append('sheet', sheet);
+            const resp = await fetch(API_URL, {
+                method: 'POST',
+                body: formData
+            });
             const data = await resp.json();
             if (Array.isArray(data)) results[sheet] = data;
         }
@@ -1202,8 +1212,9 @@ async function loadFromCloud() {
         }
         if (results.fixed_workers) fixedWorkers = results.fixed_workers;
         if (results.edit_requests) pendingEditRequests = results.edit_requests;
+        console.log('✅ Data loaded from cloud');
         return true;
-    } catch(e) {
+    } catch (e) {
         console.warn('Cloud load failed, using local data');
         return false;
     }
