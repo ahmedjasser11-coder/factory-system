@@ -975,7 +975,7 @@
 </div>
 <div id="globalPromptModal" class="modal"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 id="globalPromptTitle">إدخال</h3><span class="close-modal" onclick="closeModal('globalPromptModal')">&times;</span></div><p id="globalPromptMessage">الرجاء الإدخال</p><div class="form-group"><input type="text" id="globalPromptInput" placeholder=""></div><div style="display:flex; gap:12px; margin-top:20px; justify-content:center;"><button id="globalPromptOkBtn" class="btn btn-primary">موافق</button><button id="globalPromptCancelBtn" class="btn btn-outline">إلغاء</button></div></div></div>
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyb9p7ymJT3Co38kRs6nWKV-MV_HayioAALBNmEZ7ql-_cSmDUvJRr-4et8p8wzD1uQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyl8gPu_dOXvTEbIN7o7LWrxStG1QlnhpNHUXuTGJxIjyCtZip3thTg27ZbdoYFEpcR/exec';
 let useCloud = true;
 
 // ==================== المتغيرات العامة والإعدادات الأولية ====================
@@ -1146,7 +1146,7 @@ async function syncToCloud() {
     if (!useCloud) return;
     try {
         const modelsArray = Object.entries(productionModelsProgress).map(([model, data]) => ({ model, ...data }));
-        const payloads = [
+        const sheets = [
             { sheet: 'production_workers', data: productionWorkers },
             { sheet: 'production_phases', data: productionPhases },
             { sheet: 'production_models', data: modelsArray },
@@ -1155,11 +1155,11 @@ async function syncToCloud() {
             { sheet: 'fixed_workers', data: fixedWorkers },
             { sheet: 'edit_requests', data: pendingEditRequests }
         ];
-        for (let p of payloads) {
+        for (let s of sheets) {
             const params = new URLSearchParams();
             params.append('action', 'write');
-            params.append('sheet', p.sheet);
-            params.append('data', JSON.stringify(p.data));
+            params.append('sheet', s.sheet);
+            params.append('data', JSON.stringify(s.data));
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1178,9 +1178,13 @@ async function saveData() {
 }
 
 async function loadFromCloud() {
-    if (!useCloud) return;
+    if (!useCloud) return false;
     try {
-        const sheets = ['production_workers', 'production_phases', 'production_models', 'production_completion_groups', 'production_last_models', 'fixed_workers', 'edit_requests'];
+        const sheets = [
+            'production_workers', 'production_phases', 'production_models',
+            'production_completion_groups', 'production_last_models',
+            'fixed_workers', 'edit_requests'
+        ];
         for (let sheet of sheets) {
             const params = new URLSearchParams();
             params.append('action', 'read');
@@ -1192,12 +1196,23 @@ async function loadFromCloud() {
             });
             const data = await resp.json();
             if (Array.isArray(data)) {
-                window[sheet] = data;  // يجب تحويلها لاحقاً للكائنات الصحيحة
+                if (sheet === 'production_models') {
+                    productionModelsProgress = {};
+                    data.forEach(item => {
+                        const model = item.model;
+                        delete item.model;
+                        productionModelsProgress[model] = item;
+                    });
+                } else if (sheet === 'production_last_models') {
+                    productionLastUsedModels = data.map(i => i.model).filter(Boolean);
+                } else {
+                    window[sheet] = data; // ربط المتغيرات تلقائياً
+                }
             }
         }
         console.log('✅ Data loaded from cloud');
         return true;
-    } catch (e) {
+    } catch(e) {
         console.warn('Cloud load failed, using local data');
         return false;
     }
