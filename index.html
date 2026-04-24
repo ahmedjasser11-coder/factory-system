@@ -1160,11 +1160,11 @@ async function syncToCloud() {
             formData.append('action', 'write');
             formData.append('sheet', p.sheet);
             formData.append('data', JSON.stringify(p.data));
-            await fetch(API_URL, {
-                method: 'POST',
-                body: formData
-            });
-        }
+           await fetch(API_URL, {
+    method: 'POST',
+    body: formData,
+    mode: 'no-cors'
+});
         console.log('✅ Synced to cloud');
     } catch(e) {
         console.warn('Sync failed:', e);
